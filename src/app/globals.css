@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+
+  --color-primary-100: #D9EDFE;
+  --color-primary-800: #1C4A9E;
+  --color-primary-900: #1C4A9E;
+
+  --color-secondary-100: #FDEEEB;
+  --color-secondary-800: #9E3526;
+  --color-secondary-900: #72261C;
+
+
+  --color-tertiary-50: #FFF0FA;
+  --color-tertiary-800: #9F2164;
+  --color-tertiary-900: #74184A;
+  --color-tertiary-950: #460D2B;
+  
+  --color-neutral: #ffffff;
+  --color-neutral-50: #F6F6F6;
+
+}
+
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background-color: var(--color-neutral);
+}

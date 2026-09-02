@@ -1,0 +1,71 @@
+import { ProductsResponse } from '@/types/shopify';
+
+interface ShopifyFetchOptions {
+    query: string;
+    variables?: Record<string, any>;
+}
+
+export async function shopifyFetch<T = any> ({ query, variables = {}} : ShopifyFetchOptions): Promise<T> {
+    const response  = await fetch(
+        `https://${process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN}/api/${process.env.NEXT_PUBLIC_SHOPIFY_API_VERSION}/graphql.json`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Storefront-Access-Token': process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN!,
+            },
+            body: JSON.stringify({ query, variables }),
+        }
+    );
+
+    if(!response.ok) {
+        throw new Error(`Shopify API error: ${response.statusText}`);
+    }
+
+    const json = await response.json();
+    if(json.errors) {
+        throw new Error(`GraphQL error: ${JSON.stringify(json.errors)}`);
+    }
+
+    return json.data as T;
+}
+
+export async function getProducts(first: number = 12): Promise<ProductsResponse> {
+    const query = `
+        query GetProducts($first: Int!) { 
+           products(first: $first) {
+                nodes {
+                    id
+                    title
+                    handle
+                    description
+                    priceRange {
+                        minVariantPrice {
+                            amount
+                            currencyCode
+                        }
+                    }
+                    images(first: 1) {
+                        nodes {
+                            url
+                            altText
+                        }
+                    }
+                    variants(first: 1) {
+                        nodes {
+                            id
+                            price {
+                                amount
+                                currencyCode
+                            }
+                        }
+                    }
+                }
+           }
+        }
+    `;
+    return shopifyFetch<ProductsResponse>({
+        query,
+        variables: { first },
+    });
+} 
