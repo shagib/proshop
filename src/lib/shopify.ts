@@ -91,6 +91,126 @@ export async function getProducts(): Promise<Product[]> {
     return data.products.edges.map((edge) => edge.node);
 }
 
+//For single product page
+export type ProductVariant = {
+  id: string;
+  title: string;
+  availableForSale: boolean;
+  selectedOptions: {
+    name: string;
+    value: string;
+  }[];
+  price: {
+    amount: string;
+    currencyCode: string;
+  };
+};
+
+export type SingleProduct = Product & {
+  images: {
+    edges: {
+      node: {
+        url: string;
+        altText: string | null;
+      };
+    }[];
+  };
+  options: {
+    name: string;
+    values: string[];
+  }[];
+  variants: {
+    edges: {
+      node: ProductVariant;
+    }[];
+  };
+  collections: {
+    edges: {
+      node: {
+        title: string;
+        handle: string;
+      };
+    }[];
+  };
+};
+
+type SingleProductResponse = {
+  product: SingleProduct | null;
+};
+
+const getProductByHandleQuery = `
+  query getProductByHandle($handle: String!) {
+    product(handle: $handle) {
+      id
+      title
+      handle
+      description
+      createdAt
+      featuredImage {
+        url
+        altText
+      }
+      priceRange {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+      }
+      compareAtPriceRange {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+      }
+      images(first: 10) {
+        edges {
+          node {
+            url
+            altText
+          }
+        }
+      }
+      options {
+        name
+        values
+      }
+      variants(first: 25) {
+        edges {
+          node {
+            id
+            title
+            availableForSale
+            selectedOptions {
+              name
+              value
+            }
+            price {
+              amount
+              currencyCode
+            }
+          }
+        }
+      }
+      collections(first: 1) {
+        edges {
+          node {
+            title
+            handle
+          }
+        }
+      }
+    }
+  }
+`;
+
+export async function getProduct(handle: string): Promise<SingleProduct | null> {
+  const data = await shopifyFetch<SingleProductResponse>({
+    query: getProductByHandleQuery,
+    variables: { handle },
+  });
+  return data.product;
+}
+
 
 
 

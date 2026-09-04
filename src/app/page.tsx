@@ -15,7 +15,7 @@ export default async function Home() {
 
   return (
     <main className="banner px-8 max-[1024px]:px-4">
-      <section className="flex items-start gap-8 py-25 max-w-[1856px] mx-auto max-[1024px]:flex-col  max-[768px]:py-15"> 
+      <section className="flex items-start gap-8 py-25 max-w-[1856px] mx-auto max-[1024px]:flex-col max-[768px]:py-15"> 
         <div className="bg-primary-100 p-16 relative rounded-lg w-3/5 overflow-hidden h-[stretch] max-[1200px]:p-8 max-[1024px]:w-full">
           <div className="flex flex-col gap-8 justify-between h-full">
             <div className="relative z-10 max-w-[700px] mb-3">
