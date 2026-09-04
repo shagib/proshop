@@ -1,93 +1,397 @@
 import { getProducts } from '@/lib/shopify';
-import { Product } from '@/types/shopify';
+import Link from 'next/link';
+import WishlistButton from '../components/wishlistButton/wishlistButton';
+import { getProductBadgeInfo } from '@/lib/product-helpers';
+import ProductCarousel from '../components/productCarousel/ProductCarousel';
+// import { Product } from '@/types/shopify';
 import bannerBg from '../img/banner-heading.svg';
 import bannerFeatureBg from '../img/banner-feature.png';
 import summerFeatureBg from '../img/summer-feature.png';
 import winterFeatureBg from '../img/winter-feature.png';
 
 export default async function Home() {
-  let products: Product[] = [];
-  try {
-    const data = await getProducts(12);
-    products = data.products.nodes;
-  }catch (error) {
-    console.error('Error fetching products:', error);
-  }
+  const products = await getProducts();
+  // console.log(products);
 
   return (
     <main className="banner px-8 max-[1024px]:px-4">
-        <section className="flex items-start gap-8 py-25 max-w-[1856px] mx-auto max-[1024px]:flex-col"> 
-          <div className="bg-primary-100 p-16 relative rounded-lg w-3/5 overflow-hidden h-[stretch] max-[1200px]:p-8 max-[1024px]:w-full">
-            <div className="flex flex-col gap-8 justify-between h-full">
-              <div className="relative z-10 max-w-[700px] mb-3">
-                <span className="text-sm font-semibold uppercase text-primary-900 mb-6 block leading-[16.8px]">
-                  LOUIS VUITTON
-                </span> 
-                <h1 className="text-[84px] font-semibold uppercase text-primary-900 mb-3 leading-[100px] max-[768px]:text-4xl max-[768px]:leading-[44px]">
-                  Elevate Your Fashion
-                </h1>
-                <p className="text-primary-900 text-lg leading-[25.2px] font-normal">
-                  All Limited Edition in One Place
-                </p>
-              </div>
-              <div className="flex justify-center items-center">
-                <img src={bannerBg.src} alt="Banner Background" className="h-auto" />
-              </div>
-              <div className="relative z-10 flex flex-col justify-between align-items-start gap-[18px] max-w-[480px]">
-                <span className="text-[84px] font-semibold uppercase text-primary-900 leading-[100px] max-[768px]:text-4xl max-[768px]:leading-[44px]">
-                  50%<span className="text-[28px] leading-[33.6px] font-semibold ml-3 max-[768px]:text-xl max-[768px]:leading-[28px]">off</span>
+      <section className="flex items-start gap-8 py-25 max-w-[1856px] mx-auto max-[1024px]:flex-col  max-[768px]:py-15"> 
+        <div className="bg-primary-100 p-16 relative rounded-lg w-3/5 overflow-hidden h-[stretch] max-[1200px]:p-8 max-[1024px]:w-full">
+          <div className="flex flex-col gap-8 justify-between h-full">
+            <div className="relative z-10 max-w-[700px] mb-3">
+              <span className="text-sm font-semibold uppercase text-primary-900 mb-6 block leading-[16.8px]">
+                LOUIS VUITTON
+              </span> 
+              <h1 className="text-[84px] font-semibold uppercase text-primary-900 mb-3 leading-[100px] max-[768px]:text-4xl max-[768px]:leading-[44px]">
+                Elevate Your Fashion
+              </h1>
+              <p className="text-primary-900 text-lg leading-[25.2px] font-normal">
+                All Limited Edition in One Place
+              </p>
+            </div>
+            <div className="flex justify-center items-center">
+              <img src={bannerBg.src} alt="Banner Background" className="h-auto" />
+            </div>
+            <div className="relative z-10 flex flex-col justify-between align-items-start gap-[18px] max-w-[480px]">
+              <span className="text-[84px] font-semibold uppercase text-primary-900 leading-[100px] max-[768px]:text-4xl max-[768px]:leading-[44px]">
+                50%<span className="text-[28px] leading-[33.6px] font-semibold ml-3 max-[768px]:text-xl max-[768px]:leading-[28px]">off</span>
+              </span>
+              <span className="text-lg font-normal text-primary-900 leading-[25.2px]">
+                Discover quality fashion that reflects your style and makes everyday living more enjoyable.
+              </span>
+              <button className="bg-primary-900 text-neutral-50 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-primary-900 rounded-sm hover:bg-transparent hover:text-primary-900 max-[768px]:px-8 max-[768px]:py-2 whitespace-nowrap max-[768px]:text-sm">
+                SHOP NOW
+              </button>
+            </div>
+          </div>
+          <div className="absolute right-0 bottom-0">
+            <img src={bannerFeatureBg.src} alt="Banner Feature" className="h-full cover" />
+          </div>
+        </div>
+        <div className="flex flex-col gap-8 w-2/5 h-full max-[1024px]:w-full max-[1024px]:flex-row max-[768px]:flex-col">
+          <div className="flex flex-col gap-8 rounded-lg overflow-hidden h-full w-full max-[1024px]:h-[stretch]">
+            <div className="relative p-8 bg-tertiary-50 flex flex-col gap-[140px] justify-between align-items-start h-full  max-[800px]:gap-8 max-[768px]:gap-[140px]">
+              <div className="w-[310px] relative z-10 max-[1024px]:w-full">
+                <span className="text-sm font-semibold uppercase text-tertiary-800 block leading-[16.8px]">Featured Collection</span>
+                <h2 className="mt-4 text-5xl font-semibold uppercase text-tertiary-900 leading-[57.6px] max-[768px]:text-3xl max-[768px]:leading-[38.6px]">Clearance Winter</h2>
+              </div> 
+              <div className="relative z-10 flex justify-between items-center gap-8 rounded-lg py-2 px-2 pl-4 bg-neutral max-[1560px]:flex-wrap max-[1560px]:p-4">
+                <span className="text-lg font-normal text-tertiary-950 leading-[25.2px] h-max">
+                  welcome for new commerce, we have a special offer! claim now!
                 </span>
-                <span className="text-lg font-normal text-primary-900 leading-[25.2px]">
-                  Discover quality fashion that reflects your style and makes everyday living more enjoyable.
-                </span>
-                <button className="bg-primary-900 text-neutral-50 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-primary-900 rounded-sm hover:bg-transparent hover:text-primary-900 max-[768px]:px-8 max-[768px]:py-2 whitespace-nowrap max-[768px]:text-sm">
+                <button className="bg-tertiary-900 text-neutral-50 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-tertiary-900 rounded-sm hover:bg-transparent hover:text-tertiary-900 whitespace-nowrap max-[1560px]:w-full max-[768px]:px-8 max-[768px]:py-2 max-[768px]:text-sm">
+                  SHOP NOW
+                </button>
+              </div>
+              <div className="absolute right-0 bottom-0 top-0 h-full z-9">
+                <img src={winterFeatureBg.src} alt="Banner Feature" className="h-full object-cover" />
+              </div> 
+            </div>
+          </div>
+          <div className="flex flex-col gap-8 rounded-lg overflow-hidden h-full w-full max-[1024px]:h-[stretch]">
+            <div className="relative p-8 bg-secondary-100 flex flex-col justify-between items-center h-full">
+              <div className="bg-transparent w-max max-[1024px]:w-full">
+                <img src={summerFeatureBg.src} alt="Banner Feature" className="h-auto w-full object-cover" />
+              </div> 
+              
+              <div className="relative flex justify-between items-end gap-8 w-full max-[1560px]:flex-wrap">
+                <div className="w-[310px] max-[1024px]:w-full">
+                  <span className="text-sm font-semibold uppercase text-secondary-800 block leading-[16.8px]">Featured Collection</span>
+                  <h2 className="mt-4 text-5xl font-semibold uppercase text-secondary-900 leading-[57.6px] max-[768px]:text-3xl max-[768px]:leading-[38.6px]">Clearance Summer</h2>
+                </div> 
+                <button className="text-secondary-900 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-secondary-900 rounded-sm hover:bg-secondary-900 hover:text-neutral whitespace-nowrap max-[768px]:px-8 max-[768px]:py-2 max-[768px]:text-sm">
                   SHOP NOW
                 </button>
               </div>
             </div>
-            <div className="absolute right-0 bottom-0">
-              <img src={bannerFeatureBg.src} alt="Banner Feature" className="h-full cover" />
+          </div>
+        </div>
+      </section>
+     
+      <section className="products mb-25 max-[768px]:mb-15">
+        <div className="products-container">
+
+          <ProductCarousel title="Our New Collections"> 
+
+            {products.map((product) => {
+              const { hasDiscount, discountPercent, isNew } = getProductBadgeInfo(product);
+                return(
+                  <Link
+                    href={`/products/${product.handle}`}
+                    className="products-card flex-none w-[340px]"
+                    key={product.id}
+                  >
+                    <div className="product-image-wrapper h-[450px] bg-neutral-50 px-4 py-4 border border-neutral-100 rounded-lg">
+                      <div className='product-card-badges flex justify-between items-center mb-2'>
+                        <span className='flex gap-3'>
+                          {hasDiscount && (
+                            <span className="badge badge-discount bg-error-base px-2 py-[2px] text-base leading-[22.4px] font-normal text-neutral rounded">-{discountPercent}%</span>
+                          )}
+                          {isNew && <span className="badge badge-new bg-error-base px-2 py-[2px] text-base leading-[22.4px] font-normal text-neutral rounded">NEW</span>}
+                        </span>
+                        <WishlistButton productId={product.id} />
+                      </div>
+                      <div className="product-image h-[350px] overflow-hidden rounded-lg">
+                          {product.featuredImage && (
+                            <img 
+                              src={product.featuredImage.url}
+                              alt={product.featuredImage.altText ?? product.title} 
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                      </div>
+                    </div>
+                    <div className="products-card-info mt-5 flex justify-between items-start gap-4 mx-3">
+                      <h3 className="products-card-title text-neutral-950 text-xl leading-[32px] font-medium">
+                        {product.title}
+                      </h3>
+                      <span className="products-card-price text-neutral-950 text-xl leading-[32px] font-semibold whitespace-nowrap">
+                        {product.priceRange.minVariantPrice.amount}{' '}
+                        {product.priceRange.minVariantPrice.currencyCode}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              
+            })}
+          </ProductCarousel>
+        </div>
+      </section>
+
+    
+      {/* <section className="categories">
+        <div className="categories__container">
+          <h2 className="categories__heading">Our Top Categories</h2>
+          <div className="categories__grid">
+            <a href="/collections/bags" className="categories__item">
+              <img src="{{ 'cat-bags.jpg' | asset_url }}" alt="Bags" className="categories__image" />
+              <span className="categories__label">Bags</span>
+            </a>
+            <a href="/collections/sunglasses" className="categories__item">
+              <img src="{{ 'cat-sunglasses.jpg' | asset_url }}" alt="Sunglasses" className="categories__image" />
+              <span className="categories__label">Sunglasses</span>
+            </a>
+            <a href="/collections/caps-hats" className="categories__item">
+              <img src="{{ 'cat-caps.jpg' | asset_url }}" alt="Caps & Hats" className="categories__image" />
+              <span className="categories__label">Caps & Hats</span>
+            </a>
+            <a href="/collections/belts" className="categories__item">
+              <img src="{{ 'cat-belts.jpg' | asset_url }}" alt="Belts" className="categories__image" />
+              <span className="categories__label">Belts</span>
+            </a>
+            <a href="/collections/wallets" className="categories__item">
+              <img src="{{ 'cat-wallets.jpg' | asset_url }}" alt="Wallets" className="categories__image" />
+              <span className="categories__label">Wallets</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="promo-banner">
+        <div className="promo-banner__container">
+          <div className="promo-banner__images">
+            <img src="{{ 'promo-1.jpg' | asset_url }}" alt="Sale item" className="promo-banner__img" />
+            <img src="{{ 'promo-2.jpg' | asset_url }}" alt="Sale item" className="promo-banner__img" />
+            <img src="{{ 'promo-3.jpg' | asset_url }}" alt="Sale item" className="promo-banner__img" />
+          </div>
+          <div className="promo-banner__content">
+            <span className="promo-banner__brand">LOUIS VUITTON</span>
+            <h2 className="promo-banner__title">End of season sale up to 50% off</h2>
+            <a href="/collections/sale" className="promo-banner__cta btn btn--primary">SHOP NOW</a>
+          </div>
+        </div>
+      </section>
+
+      <section className="featured">
+        <div className="featured__container">
+          <div className="featured__content">
+            <span className="featured__eyebrow">Care For Your Skin</span>
+            <h2 className="featured__title">Natural self care products</h2>
+            <p className="featured__description">
+              We create safe products that really work and are
+              designed to make you feel good
+            </p>
+          </div>
+          <div className="featured__grid">
+            <div className="featured__card">
+              <img src="{{ product.featured_image | img_url: '300x' }}" alt="Small bag pack" />
+              <h3 className="featured__card-title">Small bag pack</h3>
+              <span className="featured__card-price">$80.00</span>
             </div>
           </div>
-          <div className="flex flex-col gap-8 w-2/5 h-full max-[1024px]:w-full max-[1024px]:flex-row max-[768px]:flex-col">
-            <div className="flex flex-col gap-8 rounded-lg overflow-hidden h-full w-full max-[1024px]:h-[stretch]">
-              <div className="relative p-8 bg-tertiary-50 flex flex-col gap-[140px] justify-between align-items-start h-full  max-[800px]:gap-8 max-[768px]:gap-[140px]">
-                <div className="w-[310px] relative z-10 max-[1024px]:w-full">
-                  <span className="text-sm font-semibold uppercase text-tertiary-800 block leading-[16.8px]">Featured Collection</span>
-                  <h2 className="mt-4 text-5xl font-semibold uppercase text-tertiary-900 leading-[57.6px] max-[768px]:text-3xl max-[768px]:leading-[38.6px]">Clearance Winter</h2>
-                </div> 
-                <div className="relative z-10 flex justify-between items-center gap-8 rounded-lg py-2 px-2 pl-4 bg-neutral max-[1560px]:flex-wrap max-[1560px]:p-4">
-                  <span className="text-lg font-normal text-tertiary-950 leading-[25.2px] h-max">
-                    welcome for new commerce, we have a special offer! claim now!
-                  </span>
-                  <button className="bg-tertiary-900 text-neutral-50 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-tertiary-900 rounded-sm hover:bg-transparent hover:text-tertiary-900 whitespace-nowrap max-[1560px]:w-full max-[768px]:px-8 max-[768px]:py-2 max-[768px]:text-sm">
-                    SHOP NOW
-                  </button>
-                </div>
-                <div className="absolute right-0 bottom-0 top-0 h-full z-9">
-                  <img src={winterFeatureBg.src} alt="Banner Feature" className="h-full object-cover" />
-                </div> 
-              </div>
+        </div>
+      </section>
+
+      <section className="lookbook">
+        <div className="lookbook__container">
+          <div className="lookbook__content">
+            <span className="lookbook__eyebrow">Care For Your Skin</span>
+            <h2 className="lookbook__title">Natural self care products</h2>
+            <p className="lookbook__description">
+              We create safe products that really work and are
+              designed to make you feel good
+            </p>
+            <a href="/collections/all" className="lookbook__cta btn btn--primary">SHOP NOW</a>
+          </div>
+          <div className="lookbook__gallery">
+            <img src="{{ 'look-1.jpg' | asset_url }}" alt="Lookbook" className="lookbook__img lookbook__img--large" />
+            <img src="{{ 'look-2.jpg' | asset_url }}" alt="Lookbook" className="lookbook__img" />
+            <img src="{{ 'look-3.jpg' | asset_url }}" alt="Lookbook" className="lookbook__img" />
+          </div>
+        </div>
+      </section>
+
+      <section className="tabbed-products">
+        <div className="tabbed-products__container">
+          <h2 className="tabbed-products__heading">Our New Collections</h2>
+          <div className="tabbed-products__tabs">
+            <button className="tabbed-products__tab tabbed-products__tab--active">Luna Watch</button>
+            <button className="tabbed-products__tab">Aura Bag</button>
+            <button className="tabbed-products__tab">Muse Shades</button>
+          </div>
+          <div className="tabbed-products__grid">
+            <div className="tabbed-products__card">
+              <img src="{{ product.featured_image | img_url: '400x' }}" alt="Small bag pack" />
+              <h3 className="tabbed-products__card-title">Small bag pack</h3>
+              <span className="tabbed-products__card-price">$80.00</span>
             </div>
-            <div className="flex flex-col gap-8 rounded-lg overflow-hidden h-full w-full max-[1024px]:h-[stretch]">
-              <div className="relative p-8 bg-secondary-100 flex flex-col justify-between items-center h-full">
-                <div className="bg-transparent w-max max-[1024px]:w-full">
-                  <img src={summerFeatureBg.src} alt="Banner Feature" className="h-auto w-full object-cover" />
-                </div> 
-                
-                <div className="relative flex justify-between items-end gap-8 w-full max-[1560px]:flex-wrap">
-                  <div className="w-[310px] max-[1024px]:w-full">
-                    <span className="text-sm font-semibold uppercase text-secondary-800 block leading-[16.8px]">Featured Collection</span>
-                    <h2 className="mt-4 text-5xl font-semibold uppercase text-secondary-900 leading-[57.6px] max-[768px]:text-3xl max-[768px]:leading-[38.6px]">Clearance Summer</h2>
-                  </div> 
-                  <button className="text-secondary-900 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-secondary-900 rounded-sm hover:bg-secondary-900 hover:text-neutral whitespace-nowrap max-[768px]:px-8 max-[768px]:py-2 max-[768px]:text-sm">
-                    SHOP NOW
-                  </button>
-                </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="accessories">
+        <div className="accessories__container">
+          <div className="accessories__grid">
+            <div className="accessories__card">
+              <div className="accessories__card-image">
+                <img src="{{ product.featured_image | img_url: '400x' }}" alt="T-Lock Canvas" />
+              </div>
+              <div className="accessories__card-info">
+                <span className="accessories__card-category">Accessory</span>
+                <h3 className="accessories__card-title">T-Lock Canvas Top Handle Ecru/ Tan</h3>
+                <span className="accessories__card-price">$70.00 — $100.00</span>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
+
+      <section className="collection-banner">
+        <div className="collection-banner__container">
+          <h2 className="collection-banner__heading">Our New Collections</h2>
+          <div className="collection-banner__grid">
+            <div className="collection-banner__item collection-banner__item--large">
+              <img src="{{ 'banner-1.jpg' | asset_url }}" alt="Collection" />
+            </div>
+            <div className="collection-banner__item">
+              <img src="{{ 'banner-2.jpg' | asset_url }}" alt="Collection" />
+            </div>
+            <div className="collection-banner__item">
+              <img src="{{ 'banner-3.jpg' | asset_url }}" alt="Collection" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="faq">
+        <div className="faq__container">
+          <div className="faq__header">
+            <h2 className="faq__title">We are answerable!</h2>
+            <p className="faq__subtitle">
+              Find detailed answers to the most common questions about our products, shipping, returns, and custom
+            </p>
+          </div>
+          <div className="faq__list">
+            <details className="faq__item" open>
+              <summary className="faq__question">What materials do you use?</summary>
+              <div className="faq__answer">
+                <p>We use high-quality, durable materials including premium leather, stainless steel, and impact-resistant materials.</p>
+              </div>
+            </details>
+            <details className="faq__item">
+              <summary className="faq__question">Do you offer international shipping?</summary>
+              <div className="faq__answer"><p>Yes, we ship worldwide.</p></div>
+            </details>
+            <details className="faq__item">
+              <summary className="faq__question">What is your return policy?</summary>
+              <div className="faq__answer"><p>30-day return policy on all items.</p></div>
+            </details>
+            <details className="faq__item">
+              <summary className="faq__question">How can I track my order?</summary>
+              <div className="faq__answer"><p>Via your account dashboard.</p></div>
+            </details>
+            <details className="faq__item">
+              <summary className="faq__question">What payment methods do you accept?</summary>
+              <div className="faq__answer"><p>Visa, Mastercard, PayPal, and more.</p></div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section className="blog">
+        <div className="blog__container">
+          <h2 className="blog__heading">All About Proshop</h2>
+          <div className="blog__grid">
+            <article className="blog__card">
+              <img src="{{ article.image | img_url: '600x' }}" alt="Blog post" className="blog__card-image" />
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="category-slider">
+        <div className="category-slider__container">
+          <div className="category-slider__track">
+            <a href="/collections/footwear" className="category-slider__item">
+              <span className="category-slider__name">FOOTWEAR</span>
+              <span className="category-slider__count">20 Products</span>
+              <span className="category-slider__cta">SHOP NOW</span>
+            </a>
+            <a href="/collections/trousers" className="category-slider__item">
+              <span className="category-slider__name">TROUSERS</span>
+              <span className="category-slider__count">20 Products</span>
+              <span className="category-slider__cta">SHOP NOW</span>
+            </a>
+            <a href="/collections/fashion" className="category-slider__item">
+              <span className="category-slider__name">FASHION</span>
+              <span className="category-slider__count">20 Products</span>
+              <span className="category-slider__cta">SHOP NOW</span>
+            </a>
+            <a href="/collections/sports" className="category-slider__item">
+              <span className="category-slider__name">SPORTS</span>
+              <span className="category-slider__count">20 Products</span>
+              <span className="category-slider__cta">SHOP NOW</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="instagram">
+        <div className="instagram__grid">
+          <a href="#" className="instagram__item"><img src="{{ 'insta-1.jpg' | asset_url }}" alt="Instagram" /></a>
+          <a href="#" className="instagram__item"><img src="{{ 'insta-2.jpg' | asset_url }}" alt="Instagram" /></a>
+          <a href="#" className="instagram__item"><img src="{{ 'insta-3.jpg' | asset_url }}" alt="Instagram" /></a>
+          <a href="#" className="instagram__item"><img src="{{ 'insta-4.jpg' | asset_url }}" alt="Instagram" /></a>
+          <a href="#" className="instagram__item"><img src="{{ 'insta-5.jpg' | asset_url }}" alt="Instagram" /></a>
+          <a href="#" className="instagram__item"><img src="{{ 'insta-6.jpg' | asset_url }}" alt="Instagram" /></a>
+        </div>
+      </section>
+
+      <section className="newsletter">
+        <div className="newsletter__container">
+          <h2 className="newsletter__title">Our Newsletter</h2>
+          <p className="newsletter__text">
+            It Only Takes A Second To Be The First To Find Out About Our Latest News
+          </p>
+          <form className="newsletter__form" action="/contact" method="POST">
+            <input type="email" name="email" placeholder="Your Email Here" className="newsletter__input" required />
+            <button type="submit" className="newsletter__btn btn btn--primary">SUBSCRIBE</button>
+          </form>
+        </div>
+      </section>
+
+      <footer className="footer">
+        <div className="footer__container">
+          <div className="footer__brand">
+            <a href="#" className="footer__logo">PROSHOP</a>
+            <address className="footer__address">
+              10 Downing Street, Westminster,
+              London, SW 1A 2AA, United Kingdom
+            </address>
+            <a href="mailto:info@orimashop.com" className="footer__email">info@orimashop.com</a>
+            <a href="tel:1-800-123-4567" className="footer__phone">1-800-123-4567</a>
+          </div>
+
+          <div className="footer__links">
+          </div>
+
+          <div className="footer__bottom">
+            <p className="footer__copyright">&copy; 2026 - PROSHOP. All Rights Reserved.</p>
+          </div>
+        </div>
+      </footer> */}
+
+
     </main>
   );
 }

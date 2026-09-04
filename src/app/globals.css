@@ -20,6 +20,10 @@
   
   --color-neutral: #ffffff;
   --color-neutral-50: #F6F6F6;
+  --color-neutral-100: #EBEBEB;
+  --color-neutral-950: #1A1A1A;
+
+  --color-error-base: #E43242
 
 }
 
