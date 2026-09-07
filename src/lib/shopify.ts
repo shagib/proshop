@@ -1,3 +1,5 @@
+import { CartLineAdd } from "@shopify/hydrogen-react/cart-queries";
+
 export type Product = {
     id: string;
     title: string;
@@ -132,6 +134,10 @@ export type SingleProduct = Product & {
       };
     }[];
   };
+  tags: string[];
+  metafield: {              
+    value: string;
+  } | null;
 };
 
 type SingleProductResponse = {
@@ -141,64 +147,68 @@ type SingleProductResponse = {
 const getProductByHandleQuery = `
   query getProductByHandle($handle: String!) {
     product(handle: $handle) {
-      id
-      title
-      handle
-      description
-      createdAt
-      featuredImage {
-        url
-        altText
-      }
-      priceRange {
-        minVariantPrice {
-          amount
-          currencyCode
-        }
-      }
-      compareAtPriceRange {
-        minVariantPrice {
-          amount
-          currencyCode
-        }
-      }
-      images(first: 10) {
-        edges {
-          node {
+        id
+        title
+        handle
+        description
+        createdAt
+        featuredImage {
             url
             altText
-          }
         }
-      }
-      options {
-        name
-        values
-      }
-      variants(first: 25) {
-        edges {
-          node {
-            id
-            title
-            availableForSale
-            selectedOptions {
-              name
-              value
+        priceRange {
+            minVariantPrice {
+                amount
+                currencyCode
             }
-            price {
-              amount
-              currencyCode
+        }
+        compareAtPriceRange {
+            minVariantPrice {
+                amount
+                currencyCode
             }
-          }
         }
-      }
-      collections(first: 1) {
-        edges {
-          node {
-            title
-            handle
-          }
+        images(first: 10) {
+            edges {
+                node {
+                    url
+                    altText
+                }
+            }
         }
-      }
+        options {
+            name
+            values
+        }
+        variants(first: 25) {
+            edges {
+                node {
+                    id
+                    title
+                    availableForSale
+                    selectedOptions {
+                        name
+                        value
+                    }
+                    price {
+                        amount
+                        currencyCode
+                    }
+                }
+            }
+        }
+        collections(first: 1) {
+            edges {
+                node {
+                    title
+                    handle
+                }
+            }
+        }
+        tags
+        metafield(namespace: "custom", key: "additional_information") {
+            value
+        }
     }
   }
 `;
@@ -211,8 +221,133 @@ export async function getProduct(handle: string): Promise<SingleProduct | null> 
   return data.product;
 }
 
+// ===== Shop Policy (Return Policy) =====
+type ShopPolicyResponse = {
+  shop: {
+    refundPolicy: {
+      title: string;
+      body: string;
+    } | null;
+  };
+};
+ 
+const getShopPolicyQuery = `
+  query getShopPolicy {
+    shop {
+      refundPolicy {
+        title
+        body
+      }
+    }
+  }
+`;
+ 
+export async function getReturnPolicy() {
+  const data = await shopifyFetch<ShopPolicyResponse>({ query: getShopPolicyQuery });
+  return data.shop.refundPolicy;
+}
 
+// ===== Cart Types =====
+export type Cart = {
+    id: string;
+    checkoutUrl: string;
+    totalQuantity: number;
+    lines: {
+        edges: {
+            node: {
+                id: string;
+                quantity: number;
+                merchandise: {
+                    id: string;
+                    title: string;
+                    product: {
+                        title: string;
+                        handle: string;
+                    };
+                };
+            };
+        }[];
+    };
+};
 
+const cartFragment = `
+    id
+    checkoutUrl
+    totalQuantity
+    lines(first: 50) {
+        edges {
+            node {
+                id 
+                quantity
+                merchandise {
+                    ... on ProductVariant {
+                        id
+                        title
+                        product {
+                            title
+                            handle
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
+type CartCreateResponse = {
+    cartCreate: {
+        cart: Cart;
+    };
+};
+
+const cartCreateMutation = `
+    mutation cartCreate($lines: [CartLineInput!]) {
+        cartCreate(input: {lines: $lines}) {
+            cart {
+                ${cartFragment}
+            }
+        }
+    }
+`;
+
+export async function createCart(variantId: string, quantity: number): Promise<Cart> {
+    const data = await shopifyFetch<CartCreateResponse>({
+        query: cartCreateMutation,
+        variables: { lines: [{ merchandiseId: variantId, quantity}] },
+    });
+    return data.cartCreate.cart;
+};
+
+type CartLinesAddResponse = {
+    cartLinesAdd: {
+        cart: Cart;
+    };
+};
+
+const cartLinesAddMutation = `
+  mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
+    cartLinesAdd(cartId: $cartId, lines: $lines) {
+      cart {
+        ${cartFragment}
+      }
+    }
+  }
+`;
+
+export async function addToCart(
+    cartId: string,
+    variantId: string,
+    quantity: number
+): Promise<Cart> {
+    const data = await shopifyFetch<CartLinesAddResponse>({
+        query: cartLinesAddMutation,
+        variables: {
+            cartId, 
+            lines: [{ merchandiseId: variantId, quantity}]
+        }
+    });
+    return data.cartLinesAdd.cart;
+}
 
 // import { ProductsResponse } from '@/types/shopify';
 
