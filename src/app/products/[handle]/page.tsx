@@ -4,7 +4,9 @@ import { getProduct, getReturnPolicy } from '@/lib/shopify';
 import ProductGallery from '@/components/ProductGallery';
 import AddToCartForm from '@/components/AddToCartForm';
 import Accordion from '@/components/Accordion';
-// import ReviewForm from '@/components/ReviewForm';
+import ReviewForm from '@/components/ReviewForm';
+import { getReviews } from '@/actions/reviews';
+import StarRating from '@/components/StarRating';
 
 type ProductPageProps = {
   params: Promise<{ handle: string }>;
@@ -20,6 +22,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product) {
     notFound();
   }
+
+  
+  const reviews = await getReviews(handle);
+  const averageRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
 
   const images = product.images.edges.map((edge) => edge.node);
   const collection = product.collections.edges[0]?.node;
@@ -102,9 +108,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
                             </span>
                         </p>
 
-                        {/* <div className="product-rating">
-                            <span className="product-rating-count text-base leading-[22.4px] font-normal text-neutral-950">(0 Customer Reviews)</span>
-                        </div> */}
+                        {reviews.length > 0 && (
+                            <div className="product-rating flex items-center gap-2">
+                                <StarRating rating={Math.round(averageRating)} />
+                                <span className="product-rating-count text-base leading-[22.4px] font-normal text-neutral-950">
+                                    ({reviews.length} Customer Review{reviews.length !== 1 ? 's' : ''})
+                                </span>
+                            </div>
+                        )}
 
                     </div>
 
@@ -149,194 +160,42 @@ export default async function ProductPage({ params }: ProductPageProps) {
                                 ),
                             },
 
-                            // {
-                            //     id: 'reviews',
-                            //     title: 'REVIEWS (0)',
-                            //     defaultOpen: true,
-                            //     content: (
-                            //         <>
-                            //             <p className="mb-6">No reviews yet. Be the first to review this product.</p>
-                            //             <ReviewForm productTitle={product.title} />
-                            //         </>
-                            //     ),
-                            // },
+                            {
+                                id: 'reviews',
+                                title: `REVIEWS${reviews.length > 0 ? ` (${reviews.length})` : ''}`,
+                                defaultOpen: true,
+                                content: (
+                                    <>
+
+                                        {reviews.length > 0 && (
+
+                                            <div className="flex flex-col gap-6 mb-6">
+
+                                                {reviews.map((review) => (
+
+                                                    <div key={review.id} className="border-b border-neutral-100 pb-5">
+
+                                                        <StarRating rating={review.rating} size={16} />
+
+                                                        {review.title && <h4 className="font-semibold mt-3">{review.title}</h4>}
+
+                                                        <p className="text-neutral-700 mt-2 mb-3">&quot;{review.body}&quot;</p>
+
+                                                        <span className="text-sm text-neutral-500">— {review.author_name}</span>
+
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <ReviewForm productHandle={handle} productTitle={product.title} />
+                                    </>
+                                ),
+                            }
+
                         ]}
                     />
  
-                    {/* <div className="product-accordion mt-16">
-                        <details className="product-accordion-item" open>
-                            <summary className="product-accordion-header">
-                                <span className="product-accordion-title">DESCRIPTION</span>
-                            </summary>
-                            <div className="product-accordion-content">
-                                <p className='text-base leading-[22.4px] font-normal text-neutral-950'>
-                                    {product.description.slice(0, 200)}
-                                </p>
-                                <a href='#'>Read more</a>
-                            </div> 
-                        </details>
-
-                        {additionalInfo.length > 0 && (
-                            <details className="product-accordion-item">
-                                <summary className="product-accordion-header">
-                                    <span className="product-accordion-title">Additional information</span>
-                                </summary>
-                                <div className="product-accordion-content">
-                                   <table className="w-full text-left">
-                                        <tbody>
-                                            {additionalInfo.map((item) => (
-                                                <tr key={item.key} className="border-b border-neutral-100">
-                                                    <th className="py-2 pr-4 font-medium text-neutral-900">{item.key}</th>
-                                                    <td className="py-2 text-neutral-700">{item.value}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </details>
-                        )}
-                        
-
-                        <details className="product-accordion-item">
-                            <summary className="product-accordion-header">
-                                <span className="product-accordion-title">RETURN POLICY</span>
-                            </summary>
-                            <div className="product-accordion-content">
-                                 {returnPolicy?.body ? (
-                                    <div className='text-base leading-[22.4px] font-normal text-neutral-950' dangerouslySetInnerHTML={{ __html: returnPolicy.body }} />
-                                ) : (
-                                    <p>Please contact us for return policy details.</p>
-                                )}
-                                <p className='text-base leading-[22.4px] font-normal text-neutral-950'>
-                                   
-                                </p>
-                            </div>
-                        </details>
-
-                        <details className="product-accordion-item product-accordion-item--reviews" open>
-                            <summary className="product-accordion-header">
-                                <span className="product-accordion-title">
-                                    REVIEWS(1)
-                                </span>
-                                <svg className="product-accordion-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M6 9L12 15L18 9" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </summary>
-                            <div className="product-accordion-content">
-
-                                <div className="product-reviews-list">
-                                
-                                    <div className="product-review">
-                                        <div className="product-review-stars" aria-label="Rated {{ review.rating }} out of 5">
-                                           
-                                            <svg className="product-review-star {% if i <= review.rating %}product-review-star--filled{% endif %}" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                                <path 
-                                                    d="M10 1.5L12.5 7L18.5 7.5L14 11.5L15.5 17.5L10 14L4.5 17.5L6 11.5L1.5 7.5L7.5 7L10 1.5Z"
-                                                    fill="#f9af58" stroke="#f9af58"
-                                                    strokeWidth="1"
-                                                />
-                                            </svg>
-                                          
-                                        </div>
-                                        <div className="product-review-content">
-                                            <h4 className="product-review-title">
-                                                Great Quality & Stylish Design
-                                            </h4>
-                                            <p className="product-review-body">
-                                                “The bag feels premium and well-made. The material is durable, the zipper is smooth, and the size is perfect for daily use. Totally worth the price. Highly recommended!”
-                                            </p>
-                                        </div>
-                                        <span className="product-review-author">
-                                            — Arif H.
-                                        </span>
-                                    </div>
-                            
-                                    <div className="product-review">
-                                        <div className="product-review-stars" aria-label="Rated 5 out of 5">
-                                            <svg className="product-review-star product-review-star--filled" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                                <path d="M10 1.5L12.5 7L18.5 7.5L14 11.5L15.5 17.5L10 14L4.5 17.5L6 11.5L1.5 7.5L7.5 7L10 1.5Z" fill="#f9af58" stroke="#f9af58" stroke-width="1"/>
-                                            </svg>
-                                        </div>
-                                        <div className="product-review-content">
-                                            <h4 className="product-review-title">Great Quality & Stylish Design</h4>
-                                            <p className="product-review-body">"The bag feels premium and well-made. The material is durable, the zipper is smooth, and the size is perfect for daily use. Totally worth the price. Highly recommended!"</p>
-                                        </div>
-                                        <span className="product-review-author">— Arif H.</span>
-                                    </div>
-                                </div>
-
-                                <div className="product-review-form-wrapper">
-                                    <h3 className="product-review-form-heading">BE THE FIRST TO REVIEW { product.title }</h3>
-
-                                    <form className="product-review-form" action="/apps/reviews" method="post">
-                                        <input type="hidden" name="product_id" value="{{ product.id }}">
-
-                                        <div className="product-review-form-rating">
-                                            <label className="product-review-form-label">Your Rating <span aria-hidden="true">*</span></label>
-                                            <fieldset className="product-review-form-stars" aria-label="Select a rating">
-                                                <legend className="visually-hidden">Rating</legend>
-                                               
-                                                <input
-                                                    className="product-review-form-star-input visually-hidden"
-                                                    type="radio"
-                                                    name="rating"
-                                                    id="rating-star-{{ i }}"
-                                                    value="{{ i }}"
-                                                    required
-                                                />
-                                                <label className="product-review-form-star-label" for="rating-star-{{ i }}" aria-label="{{ i }} star{{ i | pluralize: '', 's' }}">
-                                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                                    <path d="M10 1.5L12.5 7L18.5 7.5L14 11.5L15.5 17.5L10 14L4.5 17.5L6 11.5L1.5 7.5L7.5 7L10 1.5Z" stroke="#d1d1d1" stroke-width="1" fill="none"/>
-                                                    </svg>
-                                                </label>
-                                               
-                                            </fieldset>
-                                        </div>
-                        
-                                        <div className="product-review-form-row">
-                                            <div className="product-review-form-field">
-                                                <label for="review-name" className="visually-hidden">Your Name</label>
-                                                <input
-                                                className="product-review-form-input"
-                                                type="text"
-                                                id="review-name"
-                                                name="author"
-                                                placeholder="Your Name Here"
-                                                required
-                                                />
-                                            </div>
-                                            <div className="product-review-form-field">
-                                                <label for="review-email" className="visually-hidden">Your Email</label>
-                                                <input
-                                                className="product-review-form-input"
-                                                type="email"
-                                                id="review-email"
-                                                name="email"
-                                                placeholder="Your Email Here"
-                                                required
-                                                />
-                                            </div>
-                                        </div>
-
-                                        
-                                        <div className="product-review-form-field product-review-form-field--full">
-                                            <label for="review-body" className="visually-hidden">Your Review</label>
-                                            <textarea
-                                                className="product-review-form-textarea"
-                                                id="review-body"
-                                                name="body"
-                                                rows="6"
-                                                placeholder="Your Review Here"
-                                                required
-                                            ></textarea>
-                                        </div>
-                                    
-                                        <button className="product-review-form-submit" type="submit">Submit Now</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </details>
-                    </div> */}
                 </div>
             </div> 
         </section>

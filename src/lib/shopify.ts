@@ -1,15 +1,30 @@
-import { CartLineAdd } from "@shopify/hydrogen-react/cart-queries";
-
 export type Product = {
     id: string;
     title: string;
     handle: string;
     description: string;
     createdAt: string;
+    vendor: string;
+    productType: string;
+
     featuredImage: {
         url: string;
         altText: string | null;
     } | null;
+
+    images: {
+        edges: {
+            node: {
+                url: string;
+                altText: string | null;
+            };
+        }[];
+    };
+
+    options: {
+        name: string;
+        values: string[];
+    }[];
 
     priceRange: {
         minVariantPrice: {
@@ -57,40 +72,65 @@ async function shopifyFetch<T>({ query, variables }: { query: string; variables?
 }
 
 const getProductsQuery = `
-    query getProducts {
-        products(first: 12) {
-            edges {
-                node {
-                    id
-                    title
-                    handle
-                    description
-                    createdAt
-                    featuredImage {
+  query getProducts($first: Int!, $sortKey: ProductSortKeys, $reverse: Boolean) {
+    products(first: $first, sortKey: $sortKey, reverse: $reverse) {
+      edges {
+        node {
+            id
+            title
+            handle
+            description
+            createdAt
+            vendor
+            productType
+            featuredImage {
+                url
+                altText
+            }
+            images(first: 4) {
+                edges {
+                    node {
                         url
                         altText
                     }
-                    priceRange {
-                        minVariantPrice {
-                            amount
-                            currencyCode
-                        }
-                    }
-                    compareAtPriceRange {
-                        minVariantPrice {
-                            amount
-                            currencyCode
-                        }
-                    }
+                }
+            }
+            options {
+                name
+                values
+            }
+            priceRange {
+                minVariantPrice {
+                    amount
+                    currencyCode
+                }
+            }
+            compareAtPriceRange {
+                minVariantPrice {
+                    amount
+                    currencyCode
                 }
             }
         }
+      }
     }
+  }
 `;
 
-export async function getProducts(): Promise<Product[]> {
-    const data = await shopifyFetch<ProductsResponse>({ query: getProductsQuery});
-    return data.products.edges.map((edge) => edge.node);
+export async function getProducts(options?: {
+  first?: number;
+  sortKey?: 'TITLE' | 'PRICE' | 'CREATED_AT' | 'BEST_SELLING' | 'RELEVANCE';
+  reverse?: boolean;
+}): Promise<Product[]> {
+  const data = await shopifyFetch<ProductsResponse>({
+    query: getProductsQuery,
+    variables: {
+      first: options?.first ?? 10,
+      sortKey: options?.sortKey ?? 'RELEVANCE',
+      reverse: options?.reverse ?? false,
+    },
+  });
+  return data.products.edges.map((edge) => edge.node);
 }
 
 //For single product page
@@ -347,6 +387,89 @@ export async function addToCart(
         }
     });
     return data.cartLinesAdd.cart;
+}
+
+// Products Collections
+type CollectionWithProductsResponse = {
+  collection: {
+    id: string;
+    title: string;
+    handle: string;
+    description: string;
+    image: {
+      url: string;
+      altText: string | null;
+    } | null;
+    products: {
+      edges: {
+        node: Product;
+      }[];
+    };
+  } | null;
+};
+
+const getCollectionByHandleQuery = `
+  query getCollectionByHandle($handle: String!) {
+    collection(handle: $handle) {
+      id
+      title
+      handle
+      description
+      image {
+        url
+        altText
+      }
+      products(first: 24) {
+        edges {
+          node {
+            id
+            title
+            handle
+            description
+            createdAt
+            vendor
+            productType
+            featuredImage {
+              url
+              altText
+            }
+            images(first: 4) {
+                edges {
+                    node {
+                        url
+                        altText
+                    }
+                }
+            }
+            options {
+                name
+                values
+            }
+            priceRange {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+            compareAtPriceRange {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export async function getCollection(handle: string) {
+  const data = await shopifyFetch<CollectionWithProductsResponse>({
+    query: getCollectionByHandleQuery,
+    variables: { handle },
+  });
+  return data.collection;
 }
 
 // import { ProductsResponse } from '@/types/shopify';

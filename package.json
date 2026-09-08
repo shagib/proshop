@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@shopify/hydrogen-react": "^2026.4.3",
     "graphql": "^16.14.2",
     "graphql-request": "^7.4.0",
@@ -22,6 +23,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.5.4",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "postcss": "^8.5.26",
