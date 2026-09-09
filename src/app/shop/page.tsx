@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getProducts } from '@/lib/shopify';
+import { getProducts } from '@/lib/shopify/products';
 import ProductCard from '@/components/ProductCard';
 
 type ShopPageProps = {

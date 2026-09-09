@@ -97,6 +97,7 @@ export default function ReviewForm({ productHandle, productTitle }: ReviewFormPr
         <input
           type="text"
           name="title"
+          maxLength={150}
           placeholder="Review Title (optional)"
           className="border border-neutral-300 rounded px-4 py-5"
         />
@@ -107,6 +108,8 @@ export default function ReviewForm({ productHandle, productTitle }: ReviewFormPr
             name="author"
             placeholder="Your Name Here"
             required
+            minLength={2}
+            maxLength={100}
             className="flex-1 border border-neutral-300 rounded px-4 py-5"
           />
           <input
@@ -114,6 +117,7 @@ export default function ReviewForm({ productHandle, productTitle }: ReviewFormPr
             name="email"
             placeholder="Your Email Here"
             required
+            maxLength={254}
             className="flex-1 border border-neutral-300 rounded px-4 py-5"
           />
         </div>
@@ -122,6 +126,8 @@ export default function ReviewForm({ productHandle, productTitle }: ReviewFormPr
           name="body"
           placeholder="Your Review Here"
           required
+          minLength={10}
+          maxLength={5000}
           rows={6}
           className="border border-neutral-300 rounded px-4 py-5"
         />

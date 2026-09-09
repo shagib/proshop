@@ -1,8 +1,6 @@
 'use server';
 
 import { sql } from '@/lib/db';
-import { requireAdmin } from '@/lib/admin-auth';
-import { revalidatePath } from 'next/cache';
 
 export type Review = {
   id: number;
@@ -22,15 +20,37 @@ export async function submitReview(data: {
   title: string;
   body: string;
 }) {
+  const productHandle = data.productHandle.trim();
+  const authorName = data.authorName.trim();
+  const authorEmail = data.authorEmail.trim().toLowerCase();
+  const title = data.title.trim();
+  const body = data.body.trim();
+
+  if (!/^[a-z0-9-]{1,255}$/.test(productHandle)) {
+    throw new Error('Invalid product.');
+  }
+  if (authorName.length < 2 || authorName.length > 100) {
+    throw new Error('Name must be between 2 and 100 characters.');
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authorEmail) || authorEmail.length > 254) {
+    throw new Error('Invalid email address.');
+  }
+  if (!Number.isInteger(data.rating) || data.rating < 1 || data.rating > 5) {
+    throw new Error('Rating must be between 1 and 5.');
+  }
+  if (title.length > 150 || body.length < 10 || body.length > 5000) {
+    throw new Error('Review content is invalid.');
+  }
+
   await sql`
     INSERT INTO reviews (product_handle, author_name, author_email, rating, title, body)
     VALUES (
-      ${data.productHandle},
-      ${data.authorName},
-      ${data.authorEmail},
+      ${productHandle},
+      ${authorName},
+      ${authorEmail},
       ${data.rating},
-      ${data.title},
-      ${data.body}
+      ${title || null},
+      ${body}
     )
   `;
 
@@ -46,34 +66,4 @@ export async function getReviews(productHandle: string): Promise<Review[]> {
   `;
 
   return reviews as Review[];
-}
-
-export type AdminReview = Review & {
-    approved: boolean;
-}
-
-export async function getAllReviews(): Promise<AdminReview[]> {
-  await requireAdmin();
-
-  const reviews = await sql`
-    SELECT id, product_handle, author_name, rating, title, body, approved, created_at
-    FROM reviews
-    ORDER BY created_at DESC
-  `;
- 
-  return reviews as AdminReview[];
-}
-
-export async function approveReview(id: number) {
-  await requireAdmin();
-
-  await sql`UPDATE reviews SET approved = true WHERE id = ${id}`;
-  revalidatePath('/admin/reviews');
-}
-
-export async function deleteReview(id: number) {
-  await requireAdmin();
-
-  await sql`DELETE FROM reviews WHERE id = ${id}`;
-  revalidatePath('/admin/reviews');
 }

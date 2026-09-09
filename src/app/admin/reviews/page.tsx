@@ -1,7 +1,8 @@
-import { getAllReviews } from '@/actions/reviews';
+import { getAllReviews } from '@/actions/admin-review';
 import AdminSessionTimeout from '@/components/admin/AdminSessionTimeout';
 import ReviewActions from '@/components/admin/ReviewActions';
-import { logoutAdmin, requireAdmin } from '@/lib/admin-auth';
+import AdminNav from '@/components/admin/AdminNav';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export default async function AdminReviewsPage() {
   await requireAdmin();
@@ -10,14 +11,8 @@ export default async function AdminReviewsPage() {
   return (
     <main className="p-8 max-w-[1200px] mx-auto">
       <AdminSessionTimeout />
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-semibold">Reviews Dashboard</h1>
-        <form action={logoutAdmin}>
-          <button type="submit" className="text-sm text-neutral-600 hover:text-black">
-            Log out
-          </button>
-        </form>
-      </div>
+      <AdminNav active="reviews" />
+      <h1 className="text-2xl font-semibold mb-2">Reviews Dashboard</h1>
 
       <p className="text-neutral-600 mb-6">
         Total {reviews.length} review — {reviews.filter((r) => !r.approved).length} waiting for approved

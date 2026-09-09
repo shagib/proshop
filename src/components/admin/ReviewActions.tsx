@@ -1,7 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
-import { approveReview, deleteReview } from '@/actions/reviews';
+import { approveReview, deleteReview } from '@/actions/admin-review';
 
 type ReviewActionsProps = {
   id: number;

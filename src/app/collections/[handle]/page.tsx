@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getCollection } from '@/lib/shopify';
+import { getCollection } from '@/lib/shopify/collections';
 import ProductCard from '@/components/ProductCard';
 
 type CollectionPageProps = {

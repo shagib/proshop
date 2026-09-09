@@ -1,9 +1,6 @@
-import { getProducts } from '@/lib/shopify';
-import Link from 'next/link';
-import WishlistButton from '../components/wishlistButton/wishlistButton';
-import { getProductBadgeInfo } from '@/lib/product-helpers';
-import ProductCarousel from '../components/productCarousel/ProductCarousel';
-// import { Product } from '@/types/shopify';
+import { getProducts } from '@/lib/shopify/products';
+import ProductCard from '@/components/ProductCard';
+import ProductCarousel from '../components/ProductCarousel';
 import bannerBg from '../img/banner-heading.svg';
 import bannerFeatureBg from '../img/banner-feature.png';
 import summerFeatureBg from '../img/summer-feature.png';
@@ -92,8 +89,12 @@ export default async function Home() {
         <div className="products-container">
 
           <ProductCarousel title="Our New Collections"> 
-
-            {products.map((product) => {
+            {products.map((product) => (
+              <div className="flex-none w-[340px]" key={product.id}>
+                <ProductCard product={product} />
+              </div>
+            ))}
+            {/* {products.map((product) => {
               const { hasDiscount, discountPercent, isNew } = getProductBadgeInfo(product);
                 return(
                   <Link
@@ -133,7 +134,7 @@ export default async function Home() {
                   </Link>
                 );
               
-            })}
+            })} */}
           </ProductCarousel>
         </div>
       </section>

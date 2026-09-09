@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useProductVariant } from './ProductVariantcontext';
 
 type GalleryImage = {
   url: string;
@@ -13,8 +14,27 @@ type ProductGalleryProps = {
 };
 
 export default function ProductGallery({ images, productTitle }: ProductGalleryProps) {
+  const { selectedVariant } = useProductVariant();
+  const variantImage = selectedVariant?.image ?? null;
+
+  return (
+    <ProductGalleryView
+      key={selectedVariant?.id ?? 'default-variant'}
+      images={images}
+      productTitle={productTitle}
+      variantImage={variantImage}
+    />
+  );
+}
+
+type ProductGalleryViewProps = ProductGalleryProps & {
+  variantImage: GalleryImage | null;
+};
+
+function ProductGalleryView({ images, productTitle, variantImage }: ProductGalleryViewProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeImage = images[activeIndex];
+  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(variantImage);
+  const activeImage = selectedImage ?? images[activeIndex];
 
   return (
     <div className="product-gallery flex flex-col gap-5 w-1/2">
@@ -34,10 +54,13 @@ export default function ProductGallery({ images, productTitle }: ProductGalleryP
                     key={index}
                     type="button"
                     className={`product-gallery-thumb ${
-                    index === activeIndex ? 'product-gallery-thumb--active' : ''}`}
+                    image.url === activeImage?.url ? 'product-gallery-thumb--active' : ''}`}
                     aria-label={`View image ${index + 1}`}
-                    aria-current={index === activeIndex}
-                    onClick={() => setActiveIndex(index)}
+                    aria-current={image.url === activeImage?.url}
+                    onClick={() => {
+                      setActiveIndex(index);
+                      setSelectedImage(image);
+                    }}
                 >
                     <img
                     src={image.url}

@@ -20,7 +20,19 @@ async function createTable() {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `;
-    console.log('Reviews table created successfully!');
+    await sql`
+      CREATE TABLE IF NOT EXISTS wishlist_items (
+        id SERIAL PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        product_handle TEXT NOT NULL,
+        product_title TEXT NOT NULL,
+        product_image TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE (session_id, product_id)
+      );
+    `;
+    console.log('Reviews and wishlist tables are ready.');
   } catch (error) {
     console.error('Error creating table:', error);
   }

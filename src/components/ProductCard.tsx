@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { Product } from '@/lib/shopify';
+import { useRouter } from 'next/navigation';
+import { addItemToCart } from '@/actions/cart';
+import { notifyCartUpdated } from '@/lib/cart-events';
+import { Product } from '@/lib/shopify/products';
 import { getProductBadgeInfo } from '@/lib/product-helpers';
 import { getSwatchColor } from '@/lib/colors';
-import WishlistButton from '@/components/wishlistButton/wishlistButton';
+import WishlistButton from '@/components/wishlistButton';
 
 type ProductCardProps = {
   product: Product;
@@ -13,6 +16,8 @@ type ProductCardProps = {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const images = product.images.edges.map((edge) => edge.node);
   const displayImage = images[activeImageIndex] ?? product.featuredImage;
@@ -21,6 +26,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { hasDiscount, discountPercent } = getProductBadgeInfo(product);
 
   const colorOption = product.options.find((option) => option.name.toLowerCase() === 'color');
+  const colorValues = colorOption?.values.filter((value) =>
+    product.variants.edges.some((edge) =>
+      edge.node.availableForSale && edge.node.selectedOptions.some(
+        (option) => option.name.toLowerCase() === 'color' && option.value === value,
+      ),
+    ),
+  ) ?? [];
+  const defaultVariant = product.variants.edges.find((edge) => edge.node.availableForSale)?.node;
 
   function showPrevImage(event: React.MouseEvent) {
     event.preventDefault();
@@ -32,11 +45,27 @@ export default function ProductCard({ product }: ProductCardProps) {
     setActiveImageIndex((i) => (i === images.length - 1 ? 0 : i + 1));
   }
 
+  function handleAddToCart(event: React.MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!defaultVariant) return;
+
+    startTransition(async () => {
+      await addItemToCart(defaultVariant.id, 1);
+      notifyCartUpdated({ openDrawer: true });
+    });
+  }
+
   return (
     <Link href={`/products/${product.handle}`} className="product-card group relative block">
       {/* ===== Wishlist ===== */}
       <div className="absolute top-3 left-3 z-10">
-        <WishlistButton productId={product.id} />
+        <WishlistButton
+          productId={product.id}
+          productHandle={product.handle}
+          productTitle={product.title}
+          productImage={product.featuredImage?.url ?? null}
+        />
       </div>
 
       {/* ===== Discount Badge ===== */}
@@ -80,10 +109,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* ===== Add to Cart - Hover এ দেখা যায় ===== */}
         <button
           type="button"
-          onClick={(e) => e.preventDefault()}
+            onClick={handleAddToCart}
+            disabled={!defaultVariant || isPending}
           className="hidden group-hover:block absolute bottom-3 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-sm px-4 py-2 rounded whitespace-nowrap"
         >
-          Add to cart
+          {isPending ? 'Adding...' : defaultVariant ? 'Add to cart' : 'Sold out'}
         </button>
       </div>
 
@@ -122,12 +152,26 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* ===== Color Swatches ===== */}
-        {colorOption && (
+        {colorValues.length > 0 && (
           <div className="flex gap-2 mt-2">
-            {colorOption.values.map((value) => (
+            {colorValues.map((value) => (
               <span
                 key={value}
                 title={value}
+                role="link"
+                tabIndex={0}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  router.push(`/products/${product.handle}?color=${encodeURIComponent(value)}`);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    router.push(`/products/${product.handle}?color=${encodeURIComponent(value)}`);
+                  }
+                }}
                 className="w-4 h-4 rounded-full border border-neutral-200"
                 style={{ backgroundColor: getSwatchColor(value) }}
               />
