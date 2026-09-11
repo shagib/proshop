@@ -3,26 +3,40 @@ import ProductCard from '@/components/ProductCard';
 import ProductCarousel from '../components/ProductCarousel';
 import { getHeroBanners } from '@/lib/shopify/banner';
 import HeroSection from '@/components/sections/HeroBanner';
+import MinimalProductCard from '@/components/sections/NewArrival';
 
 export default async function Home() {
   const products = await getProducts();
   const banners = await getHeroBanners();
+  const recentProducts = [...products]
+    .sort((firstProduct, secondProduct) =>
+      new Date(secondProduct.createdAt).getTime() - new Date(firstProduct.createdAt).getTime(),
+    )
+    .slice(0, 10);
   // console.log(products);
 
   return (
     <main className="banner px-8 max-[1024px]:px-4">
       <HeroSection banners={banners} />
+
+      <div className="grid grid-cols-2 gap-x-4 gap-y-8 py-8 sm:grid-cols-3 lg:grid-cols-5">
+        
+      </div>
      
       <section className="products mb-25 max-[768px]:mb-15">
         <div className="products-container">
 
           <ProductCarousel title="Our New Collections"> 
-            {products.map((product) => (
+            {/* {products.map((product) => (
               <div className="flex-none w-[340px]" key={product.id}>
                 <ProductCard product={product} />
               </div>
+            ))} */}
+            {recentProducts.map((product) => (
+              <MinimalProductCard key={product.id} product={product} />
             ))}
-            {/* {products.map((product) => {
+          </ProductCarousel>
+          {/* {products.map((product) => {
               const { hasDiscount, discountPercent, isNew } = getProductBadgeInfo(product);
                 return(
                   <Link
@@ -63,7 +77,6 @@ export default async function Home() {
                 );
               
             })} */}
-          </ProductCarousel>
         </div>
       </section>
 
