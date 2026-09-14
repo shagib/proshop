@@ -27,56 +27,10 @@ export default async function Home() {
         <div className="products-container">
 
           <ProductCarousel title="Our New Collections"> 
-            {/* {products.map((product) => (
-              <div className="flex-none w-[340px]" key={product.id}>
-                <ProductCard product={product} />
-              </div>
-            ))} */}
             {recentProducts.map((product) => (
               <MinimalProductCard key={product.id} product={product} />
             ))}
           </ProductCarousel>
-          {/* {products.map((product) => {
-              const { hasDiscount, discountPercent, isNew } = getProductBadgeInfo(product);
-                return(
-                  <Link
-                    href={`/products/${product.handle}`}
-                    className="products-card flex-none w-[340px]"
-                    key={product.id}
-                  >
-                    <div className="product-image-wrapper h-[450px] bg-neutral-50 px-4 py-4 border border-neutral-100 rounded-lg">
-                      <div className='product-card-badges flex justify-between items-center mb-2'>
-                        <span className='flex gap-3'>
-                          {hasDiscount && (
-                            <span className="badge badge-discount bg-error-base px-2 py-[2px] text-base leading-[22.4px] font-normal text-neutral rounded">-{discountPercent}%</span>
-                          )}
-                          {isNew && <span className="badge badge-new bg-error-base px-2 py-[2px] text-base leading-[22.4px] font-normal text-neutral rounded">NEW</span>}
-                        </span>
-                        <WishlistButton productId={product.id} />
-                      </div>
-                      <div className="product-image h-[350px] overflow-hidden rounded-lg">
-                          {product.featuredImage && (
-                            <img 
-                              src={product.featuredImage.url}
-                              alt={product.featuredImage.altText ?? product.title} 
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                      </div>
-                    </div>
-                    <div className="products-card-info mt-5 flex justify-between items-start gap-4 mx-3">
-                      <h3 className="products-card-title text-neutral-950 text-xl leading-[32px] font-medium">
-                        {product.title}
-                      </h3>
-                      <span className="products-card-price text-neutral-950 text-xl leading-[32px] font-semibold whitespace-nowrap">
-                        {product.priceRange.minVariantPrice.amount}{' '}
-                        {product.priceRange.minVariantPrice.currencyCode}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              
-            })} */}
         </div>
       </section>
 

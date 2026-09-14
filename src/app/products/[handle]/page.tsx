@@ -87,7 +87,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     <main className="product-single-page px-8 max-[1024px]:px-4">
         <section className="product-single py-25 max-w-[1856px] mx-auto max-[768px]:py-15" aria-label="Product Detail">
             
-            <div className="product-container flex gap-16">
+            <div className="product-container flex gap-16 items-start">
                 <ProductVariantProvider product={product} initialOptions={initialOptions}>  
                     <ProductGallery 
                         images={images} 
