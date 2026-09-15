@@ -1,4 +1,4 @@
-import { Product } from './shopify/products';
+import { Product, ProductOption, ProductOptionValue } from './shopify/products';
 
 type PriceLike = {
   price: {
@@ -50,6 +50,12 @@ export function hasRealVariants(
     return false;
   }
   return true;
+}
+
+export function getOptionValues(option: ProductOption): ProductOptionValue[] {
+  return option.optionValues?.length > 0
+    ? option.optionValues
+    : option.values.map((value) => ({ id: value, name: value, swatch: null }));
 }
 
 export type SelectedOptions = Record<string, string>;

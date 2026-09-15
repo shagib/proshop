@@ -6,7 +6,7 @@ export default async function AdminWishlistPage() {
   const products = await getWishlistedProducts();
 
   return (
-    <main className="p-8 max-w-[1200px] mx-auto">
+    <main className="p-8 max-w-[1200px] w-full mx-auto">
       <AdminSessionTimeout />
       <AdminNav active="wishlist" />
       <h1 className="text-2xl font-semibold mb-2">Wishlist Dashboard</h1>

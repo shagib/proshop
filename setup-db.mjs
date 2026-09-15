@@ -32,7 +32,18 @@ async function createTable() {
         UNIQUE (session_id, product_id)
       );
     `;
-    console.log('Reviews and wishlist tables are ready.');
+    await sql`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        message TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'read', 'replied', 'archived')),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    console.log('Reviews, wishlist, and contact message tables are ready.');
   } catch (error) {
     console.error('Error creating table:', error);
   }

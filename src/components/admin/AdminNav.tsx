@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { logoutAdmin } from '@/lib/admin-auth';
 
-export default function AdminNav({ active }: { active: 'reviews' | 'wishlist' }) {
+export default function AdminNav({ active }: { active: 'reviews' | 'wishlist' | 'messages' }) {
   return (
     <div className="flex items-center justify-between gap-4 mb-6">
       <nav className="flex gap-4">
@@ -12,6 +12,14 @@ export default function AdminNav({ active }: { active: 'reviews' | 'wishlist' })
           }`}
         >
           Reviews
+        </Link>
+        <Link
+          href="/admin/messages"
+          className={`text-sm font-medium pb-1 border-b-2 ${
+            active === 'messages' ? 'border-neutral-950 text-neutral-950' : 'border-transparent text-neutral-500'
+          }`}
+        >
+          Messages
         </Link>
         <Link
           href="/admin/wishlist"

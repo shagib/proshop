@@ -1,5 +1,4 @@
 import { getProducts } from '@/lib/shopify/products';
-import ProductCard from '@/components/ProductCard';
 import ProductCarousel from '../components/ProductCarousel';
 import { getHeroBanners } from '@/lib/shopify/banner';
 import HeroSection from '@/components/sections/HeroBanner';
@@ -19,10 +18,6 @@ export default async function Home() {
     <main className="banner px-8 max-[1024px]:px-4">
       <HeroSection banners={banners} />
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-8 py-8 sm:grid-cols-3 lg:grid-cols-5">
-        
-      </div>
-     
       <section className="products mb-25 max-[768px]:mb-15">
         <div className="products-container">
 

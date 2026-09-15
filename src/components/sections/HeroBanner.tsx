@@ -2,7 +2,6 @@
 
 import { HeroBannerItem } from '@/lib/shopify/banner';
 
-import Image from 'next/image';
 import Link from 'next/link';
 
 export default function HeroSection({ banners = [] }: { banners: HeroBannerItem[] }) {

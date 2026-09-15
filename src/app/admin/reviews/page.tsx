@@ -9,7 +9,7 @@ export default async function AdminReviewsPage() {
   const reviews = await getAllReviews();
 
   return (
-    <main className="p-8 max-w-[1200px] mx-auto">
+    <main className="p-8 max-w-[1200px] w-full mx-auto">
       <AdminSessionTimeout />
       <AdminNav active="reviews" />
       <h1 className="text-2xl font-semibold mb-2">Reviews Dashboard</h1>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { addItemToCart } from '@/actions/cart';
 import { notifyCartUpdated } from '@/lib/cart-events';
-import { getProductBadgeInfo } from '@/lib/product-helpers';
+import { getOptionValues, getProductBadgeInfo } from '@/lib/product-helpers';
 import { getSwatchColor } from '@/lib/colors';
 import { Product } from '@/lib/shopify/products';
 import WishlistButton from '@/components/wishlistButton';
@@ -22,7 +22,7 @@ export default function MinimalProductCard({ product }: MinimalProductCardProps)
     const defaultVariant = product.variants.edges.find((edge) => edge.node.availableForSale)?.node;
     const { hasDiscount, discountPercent } = getProductBadgeInfo(product);
     const colorOption = product.options.find((option) => option.name.toLowerCase() === 'color');
-    const colorValues = colorOption?.optionValues ?? [];
+    const colorValues = colorOption ? getOptionValues(colorOption) : [];
     const currencyCode = product.priceRange.minVariantPrice.currencyCode;
     const formatPrice = (amount: string) => new Intl.NumberFormat(undefined, {
         style: 'currency',

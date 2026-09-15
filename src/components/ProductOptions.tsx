@@ -2,7 +2,7 @@
 
 import { useProductVariant } from './ProductVariantcontext';
 import { getSwatchColor } from '@/lib/colors';
-import { getAvailableValuesForOption, hasRealVariants } from '@/lib/product-helpers';
+import { getAvailableValuesForOption, getOptionValues, hasRealVariants } from '@/lib/product-helpers';
 
 export default function ProductOptions() {
   const { product, variants, selectedOptions, setOption } = useProductVariant();
@@ -21,9 +21,7 @@ export default function ProductOptions() {
           option.name,
           selectedOptions,
         );
-        const optionValues = option.optionValues?.length > 0
-          ? option.optionValues
-          : option.values.map((value) => ({ name: value, swatch: null }));
+        const optionValues = getOptionValues(option);
 
         return (
           <div key={option.name} className="product-option">

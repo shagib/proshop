@@ -57,7 +57,7 @@ const getHeroBannersQuery = `
 `;
 
 function parseBannerFields(node: MetaobjectNode): HeroBannerItem {
-  const parsedData: Record<string, any> = { id: node.id };
+  const parsedData: Record<string, string | null> = { id: node.id };
 
   node.fields.forEach((field) => {
     if (field.key === 'banner_image' || field.key === 'bg_img') {

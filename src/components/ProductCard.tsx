@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { addItemToCart } from '@/actions/cart';
 import { notifyCartUpdated } from '@/lib/cart-events';
 import { Product } from '@/lib/shopify/products';
-import { getProductBadgeInfo } from '@/lib/product-helpers';
+import { getOptionValues, getProductBadgeInfo } from '@/lib/product-helpers';
 import { getSwatchColor } from '@/lib/colors';
 import WishlistButton from '@/components/wishlistButton';
 
@@ -25,10 +25,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { hasDiscount, discountPercent } = getProductBadgeInfo(product);
 
   const colorOption = product.options.find((option) => option.name.toLowerCase() === 'color');
-  const colorValues = (colorOption?.optionValues?.length
-    ? colorOption.optionValues
-    : colorOption?.values.map((value) => ({ id: value, name: value, swatch: null })) ?? []
-  ).filter((optionValue) =>
+  const colorValues = (colorOption ? getOptionValues(colorOption) : []).filter((optionValue) =>
     product.variants.edges.some((edge) =>
       edge.node.availableForSale && edge.node.selectedOptions.some(
         (option) => option.name.toLowerCase() === 'color' && option.value === optionValue.name,
@@ -43,27 +40,6 @@ export default function ProductCard({ product }: ProductCardProps) {
         ),
       )?.node ?? defaultVariant
     : defaultVariant;
-
-  // useEffect(() => {
-  //   console.group(`[ProductCard] ${product.title}`);
-  //   console.log('Options:', product.options.map((option) => ({
-  //     name: option.name,
-  //     values: option.optionValues.map((optionValue) => ({
-  //       id: optionValue.id,
-  //       name: optionValue.name,
-  //       swatchColor: optionValue.swatch?.color ?? null,
-  //     })),
-  //   })));
-  //   console.table(product.variants.edges.map(({ node: variant }) => ({
-  //     id: variant.id,
-  //     title: variant.title,
-  //     availableForSale: variant.availableForSale,
-  //     options: variant.selectedOptions.map((option) => `${option.name}: ${option.value}`).join(' | '),
-  //     price: `${variant.price.amount} ${variant.price.currencyCode}`,
-  //     image: variant.image?.url ?? null,
-  //   })));
-  //   console.groupEnd();
-  // }, [product]);
 
   const displayImage = selectedVariant?.image ?? images[activeImageIndex] ?? product.featuredImage;
   const currencyCode = product.priceRange.minVariantPrice.currencyCode;
