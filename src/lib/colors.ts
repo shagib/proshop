@@ -13,7 +13,7 @@ const colorMap: Record<string, string> = {
   grey: '#808080',
 };
 
-export function getSwatchColor(optionValue: string): string {
+export function getSwatchColor(optionValue: string, shopifyColor?: string | null): string {
   const key = optionValue.trim().toLowerCase();
-  return colorMap[key] ?? key;
+  return shopifyColor ?? colorMap[key] ?? '#d1d5db';
 }

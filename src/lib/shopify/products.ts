@@ -23,10 +23,7 @@ export type Product = {
         }[];
     };
 
-    options: {
-        name: string;
-        values: string[];
-    }[];
+    options: ProductOption[];
 
     variants: {
       edges: {
@@ -57,6 +54,20 @@ export type ProductsResponse = {
     };
 };
 
+export type ProductOptionValue = {
+    id: string;
+    name: string;
+    swatch: {
+        color: string | null;
+    } | null;
+};
+
+export type ProductOption = {
+    name: string;
+    values: string[];
+    optionValues: ProductOptionValue[];
+};
+
 const getProductsQuery = `
   query getProducts($first: Int!, $sortKey: ProductSortKeys, $reverse: Boolean) {
     products(first: $first, sortKey: $sortKey, reverse: $reverse) {
@@ -84,6 +95,13 @@ const getProductsQuery = `
             options {
                 name
                 values
+                optionValues {
+                    id
+                    name
+                    swatch {
+                        color
+                    }
+                }
             }
             variants(first: 50) {
               edges {
@@ -176,10 +194,6 @@ export type SingleProduct = Product & {
             };
         }[];
     };
-    options: {
-        name: string;
-        values: string[];
-    }[];
     variants: {
         edges: {
             node: ProductVariant;
@@ -238,6 +252,13 @@ const getProductByHandleQuery = `
         options {
             name
             values
+            optionValues {
+                id
+                name
+                swatch {
+                    color
+                }
+            }
         }
         variants(first: 25) {
             edges {

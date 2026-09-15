@@ -12,10 +12,18 @@ export default function ProductOptions() {
   }
 
   return (
-    <div className="product-options flex flex-col gap-6">
+    <div className="product-options mt-10 flex flex-col gap-10">
       {product.options.map((option) => {
-        const isColor = option.name.toLowerCase() === 'color';
-        const availableValues = getAvailableValuesForOption(variants, option.name);
+        const isEyewearFrameColor = option.name.trim().toLowerCase() === 'eyewear frame color';
+        const isColor = option.name.trim().toLowerCase() === 'color';
+        const availableValues = getAvailableValuesForOption(
+          variants,
+          option.name,
+          selectedOptions,
+        );
+        const optionValues = option.optionValues?.length > 0
+          ? option.optionValues
+          : option.values.map((value) => ({ name: value, swatch: null }));
 
         return (
           <div key={option.name} className="product-option">
@@ -29,13 +37,32 @@ export default function ProductOptions() {
               )}
             </span>
 
-            <div className="flex flex-wrap gap-2">
-              {option.values.map((value) => {
-                const isSelected = selectedOptions[option.name] === value;
-                const isAvailable = availableValues.has(value);
+            {isEyewearFrameColor ? (
+              <select
+                value={selectedOptions[option.name] ?? ''}
+                onChange={(event) => setOption(option.name, event.target.value)}
+                aria-label={`Select ${option.name}`}
+                className="w-full max-w-sm rounded border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none focus:border-neutral-950"
+              >
+                {optionValues.map((optionValue) => (
+                  <option
+                    key={optionValue.name}
+                    value={optionValue.name}
+                    disabled={!availableValues.has(optionValue.name)}
+                  >
+                    {optionValue.name}
+                    {!availableValues.has(optionValue.name) ? ' (Unavailable)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {optionValues.map((optionValue) => {
+                  const value = optionValue.name;
+                  const isSelected = selectedOptions[option.name] === value;
+                  const isAvailable = availableValues.has(value);
 
-                if (isColor) {
-                  return (
+                  return isColor ? (
                     <button
                       key={value}
                       type="button"
@@ -44,32 +71,30 @@ export default function ProductOptions() {
                       aria-label={value}
                       disabled={!isAvailable}
                       onClick={() => setOption(option.name, value)}
-                      className={`relative w-8 h-8 rounded-full border-2 transition ${
+                      className={`relative h-8 w-8 rounded-full border-2 transition ${
                         isSelected ? 'border-neutral-950' : 'border-neutral-200'
-                      } ${!isAvailable ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:border-neutral-500'}`}
-                      style={{ backgroundColor: getSwatchColor(value) }}
+                      } ${!isAvailable ? 'cursor-not-allowed opacity-30' : 'cursor-pointer hover:border-neutral-500'}`}
+                      style={{ backgroundColor: getSwatchColor(value, optionValue.swatch?.color) }}
                     />
+                  ) : (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={isSelected}
+                      disabled={!isAvailable}
+                      onClick={() => setOption(option.name, value)}
+                      className={`rounded border px-4 py-2 text-sm font-medium transition ${
+                        isSelected
+                          ? 'border-neutral-950 bg-neutral-950 text-white'
+                          : 'border-neutral-200 text-neutral-900'
+                      } ${!isAvailable ? 'cursor-not-allowed opacity-60 line-through' : 'cursor-pointer hover:border-neutral-950'}`}
+                    >
+                      {value}
+                    </button>
                   );
-                }
-
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={isSelected}
-                    disabled={!isAvailable}
-                    onClick={() => setOption(option.name, value)}
-                    className={`px-4 py-2 rounded border text-sm font-medium transition ${
-                      isSelected
-                        ? 'border-neutral-950 bg-neutral-950 text-white'
-                        : 'border-neutral-200 text-neutral-900 hover:border-neutral-950'
-                    } ${!isAvailable ? 'opacity-30 cursor-not-allowed line-through' : 'cursor-pointer'}`}
-                  >
-                    {value}
-                  </button>
-                );
-              })}
-            </div>
+                })}
+              </div>
+            )}
           </div>
         );
       })}

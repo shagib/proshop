@@ -56,6 +56,13 @@ const getCollectionByHandleQuery = `
             options {
                 name
                 values
+                optionValues {
+                  id
+                  name
+                  swatch {
+                    color
+                  }
+                }
             }
             variants(first: 50) {
               edges {

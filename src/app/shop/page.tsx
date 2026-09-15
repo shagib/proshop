@@ -39,7 +39,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const products = await getProducts({ first: 24, sortKey, reverse });
 
   return (
-    <main className="px-8 py-16 max-w-[1856px] mx-auto max-[1024px]:px-4">
+    <main className="px-8 py-16 max-w-[1856px] w-full mx-auto max-[1024px]:px-4">
       <div className="flex justify-between items-center mb-10 flex-wrap gap-4">
         <h1 className="text-4xl font-semibold">Shop</h1>
 

@@ -10,10 +10,11 @@ export default function HeroSection({ banners = [] }: { banners: HeroBannerItem[
   const mainBanner = banners.find((b) => b.banner_position === 'main') || banners[0];
   const rightTopBanner = banners.find((b) => b.banner_position === 'right_top') || banners[1];
   const rightBottomBanner = banners.find((b) => b.banner_position === 'right_bottom') || banners[2];
+//   console.log(rightBottomBanner);
 
     return(
     
-        <section className="flex items-start gap-8 py-25 max-w-[1856px] mx-auto max-[1024px]:flex-col max-[768px]:py-15">
+        <section className="flex items-start gap-8 py-25 max-w-[1856px] w-full mx-auto max-[1024px]:flex-col max-[768px]:py-15">
       
             {/* ================= 1. LEFT MAIN BANNER ================= */}
             <div className="bg-primary-100 p-16 relative rounded-lg w-3/5 overflow-hidden h-[stretch] max-[1200px]:p-8 max-[1024px]:w-full">
@@ -58,7 +59,7 @@ export default function HeroSection({ banners = [] }: { banners: HeroBannerItem[
                             </span>
                         )}
                         <Link
-                        href={mainBanner?.button_url || '/collections/all'}
+                        href="/collections/all"
                         className="bg-primary-900 text-neutral-50 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-primary-900 hover:bg-transparent hover:text-primary-900 max-[768px]:px-8 max-[768px]:py-2 whitespace-nowrap max-[768px]:text-sm text-center"
                         >
                             {mainBanner?.button_text || 'SHOP NOW'}
@@ -102,7 +103,7 @@ export default function HeroSection({ banners = [] }: { banners: HeroBannerItem[
                                 </span>
                             )}
                             <Link
-                                href={rightTopBanner?.button_url || '/collections/winter'}
+                                href="/collections/winter"
                                 className="bg-tertiary-900 text-neutral-50 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-tertiary-900 hover:bg-transparent hover:text-tertiary-900 whitespace-nowrap max-[1560px]:w-full max-[768px]:px-8 max-[768px]:py-2 max-[768px]:text-sm text-center"
                             >
                                 {rightTopBanner?.button_text || 'SHOP NOW'}
@@ -146,7 +147,7 @@ export default function HeroSection({ banners = [] }: { banners: HeroBannerItem[
                                 </h2>
                             </div>
                             <Link
-                                href={rightBottomBanner?.button_url || '/collections/summer'}
+                                href="/collections/summer"
                                 className="text-secondary-900 px-13 py-4 rounded-sm uppercase font-bold transition inline-max border-2 border-secondary-900 hover:bg-secondary-900 hover:text-neutral whitespace-nowrap max-[768px]:px-8 max-[768px]:py-2 max-[768px]:text-sm text-center"
                             >
                                 {rightBottomBanner?.button_text || 'SHOP NOW'}

@@ -22,7 +22,12 @@ export default function MinimalProductCard({ product }: MinimalProductCardProps)
     const defaultVariant = product.variants.edges.find((edge) => edge.node.availableForSale)?.node;
     const { hasDiscount, discountPercent } = getProductBadgeInfo(product);
     const colorOption = product.options.find((option) => option.name.toLowerCase() === 'color');
-    const colorValues = colorOption?.values ?? [];
+    const colorValues = colorOption?.optionValues ?? [];
+    const currencyCode = product.priceRange.minVariantPrice.currencyCode;
+    const formatPrice = (amount: string) => new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: currencyCode,
+    }).format(Number(amount));
 
     function changeImage(event: MouseEvent, direction: -1 | 1) {
         event.preventDefault();
@@ -42,7 +47,9 @@ export default function MinimalProductCard({ product }: MinimalProductCardProps)
     }
 
     return (
+
         <Link href={`/products/${product.handle}`} className="group block flex-none w-[340px] bg-neutral-50 border border-neutral-100">
+            
             <div className="relative aspect-square overflow-hidden bg-neutral-50">
                 <div className="absolute right-5 top-5 z-10">
                     <WishlistButton
@@ -93,18 +100,19 @@ export default function MinimalProductCard({ product }: MinimalProductCardProps)
                 <p className="mt-3 flex items-center gap-2 text-base leading-[22.4px] font-semibold">
                     {hasDiscount && (
                         <span className="text-neutral-400 line-through">
-                            {product.compareAtPriceRange.minVariantPrice.amount}
+                            {formatPrice(product.compareAtPriceRange.minVariantPrice.amount)}
                         </span>
                     )}
-                    <span className={hasDiscount ? 'text-error-base' : 'text-neutral-950'}>
-                        {product.priceRange.minVariantPrice.amount}
+                    <span className={hasDiscount ? 'text-neutral-950' : 'text-neutral-950'}>
+                        {formatPrice(product.priceRange.minVariantPrice.amount)}
                     </span>
-                    {hasDiscount && <span className="rounded-full bg-error-base px-1.5 py-0.5 text-[9px] font-semibold text-white">-{discountPercent}%</span>}
+                    {hasDiscount && <span className="rounded-full bg-error-base px-[3px] py-[1px] text-[10px] leading-[13px] font-medium text-white">-{discountPercent}%</span>}
                 </p>
+
                 {colorValues.length > 0 && (
                     <div className="mt-2 flex gap-1.5">
-                        {colorValues.map((value) => (
-                            <span key={value} title={value} className="h-2.5 w-2.5 rounded-full border border-neutral-200" style={{ backgroundColor: getSwatchColor(value) }} />
+                        {colorValues.map((optionValue) => (
+                            <span key={optionValue.id} title={optionValue.name} className="h-2.5 w-2.5 rounded-full border border-neutral-200" style={{ backgroundColor: getSwatchColor(optionValue.name, optionValue.swatch?.color) }} />
                         ))}
                     </div>
                 )}

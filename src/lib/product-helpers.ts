@@ -66,6 +66,7 @@ export function findMatchingVariant<T extends VariantLike>(
   selectedOptions: SelectedOptions
 ): T | undefined {
   return variants.find((variant) =>
+    variant.availableForSale &&
     variant.selectedOptions.length === Object.keys(selectedOptions).length &&
     variant.selectedOptions.every((opt) => selectedOptions[opt.name] === opt.value)
   );
@@ -99,10 +100,18 @@ export function optionsFromVariant(variant: VariantLike): SelectedOptions {
 export function getAvailableValuesForOption(
   variants: VariantLike[],
   optionName: string,
+  selectedOptions: SelectedOptions = {},
 ): Set<string> {
   const set = new Set<string>();
   for (const variant of variants) {
     if (!variant.availableForSale) continue;
+    const matchesOtherOptions = Object.entries(selectedOptions).every(
+      ([name, value]) => name === optionName || variant.selectedOptions.some(
+        (option) => option.name === name && option.value === value,
+      ),
+    );
+    if (!matchesOtherOptions) continue;
+
     const match = variant.selectedOptions.find((opt) => opt.name === optionName);
     if (match) set.add(match.value);
   }

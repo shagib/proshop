@@ -17,7 +17,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
   const products = collection.products.edges.map((edge) => edge.node);
 
   return (
-    <main className="px-8 py-16 max-w-[1856px] mx-auto max-[1024px]:px-4">
+    <main className="px-8 py-16 max-w-[1856px] w-full mx-auto max-[1024px]:px-4">
       {/* ===== Collection Header ===== */}
       <div className="mb-12">
         {collection.image && (
