@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useTransition, type MouseEvent } from 'react';
+import { useEffect, useState, useTransition, type MouseEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { addItemToCart } from '@/actions/cart';
-import { notifyCartUpdated } from '@/lib/cart-events';
-import { getOptionValues, getProductBadgeInfo } from '@/lib/product-helpers';
+import { addItemToCart, updateCartLine } from '@/actions/cart';
+import { CART_UPDATED_EVENT, notifyCartUpdated, type CartUpdatedDetail } from '@/lib/cart-events';
+import { getDefaultVariant, getOptionValues, getProductBadgeInfo, hasRealVariants } from '@/lib/product-helpers';
 import { getSwatchColor } from '@/lib/colors';
 import { Product } from '@/lib/shopify/products';
+import type { Cart } from '@/lib/shopify/cart';
 import WishlistButton from '@/components/wishlistButton';
+import CartAddPopup from '@/components/CartAddPopup';
 
 type MinimalProductCardProps = {
     product: Product;
@@ -16,10 +18,38 @@ type MinimalProductCardProps = {
 
 export default function MinimalProductCard({ product }: MinimalProductCardProps) {
     const [activeImageIndex, setActiveImageIndex] = useState(0);
+    const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const [isOutOfStock, setIsOutOfStock] = useState(false);
+    const [cartPopup, setCartPopup] = useState<'success' | 'error' | null>(null);
+    const [addedCart, setAddedCart] = useState<Cart | null>(null);
+
+    useEffect(() => {
+        function closePreviousPopup(event: Event) {
+            const detail = (event as CustomEvent<CartUpdatedDetail>).detail;
+            if (detail?.popupProductId && detail.popupProductId !== product.id) {
+                setCartPopup(null);
+                setAddedCart(null);
+            }
+        }
+
+        window.addEventListener(CART_UPDATED_EVENT, closePreviousPopup);
+        return () => window.removeEventListener(CART_UPDATED_EVENT, closePreviousPopup);
+    }, [product.id]);
     const images = product.images.edges.map((edge) => edge.node);
-    const displayImage = images[activeImageIndex] ?? product.featuredImage;
-    const defaultVariant = product.variants.edges.find((edge) => edge.node.availableForSale)?.node;
+    const defaultVariant = getDefaultVariant(product.variants.edges.map((edge) => edge.node));
+    const hasVariants = hasRealVariants(product);
+    const selectedVariant = selectedColor
+        ? product.variants.edges.find((edge) =>
+            edge.node.selectedOptions.some(
+                (option) => option.name.toLowerCase() === 'color' && option.value === selectedColor,
+            ),
+        )?.node ?? defaultVariant
+        : defaultVariant;
+    const displayImage = selectedVariant?.image ?? images[activeImageIndex] ?? product.featuredImage;
+    const isAvailable = Boolean(
+        selectedVariant?.availableForSale && selectedVariant.quantityAvailable > 0,
+    );
     const { hasDiscount, discountPercent } = getProductBadgeInfo(product);
     const colorOption = product.options.find((option) => option.name.toLowerCase() === 'color');
     const colorValues = colorOption ? getOptionValues(colorOption) : [];
@@ -38,17 +68,50 @@ export default function MinimalProductCard({ product }: MinimalProductCardProps)
     function handleAddToCart(event: MouseEvent) {
         event.preventDefault();
         event.stopPropagation();
-        if (!defaultVariant) return;
+        if (!selectedVariant || !selectedVariant.availableForSale || selectedVariant.quantityAvailable <= 0) return;
 
         startTransition(async () => {
-            await addItemToCart(defaultVariant.id, 1);
-            notifyCartUpdated({ openDrawer: true });
+            try {
+                const updatedCart = await addItemToCart(selectedVariant.id, 1);
+                setAddedCart(updatedCart);
+                setCartPopup('success');
+                notifyCartUpdated({ popupProductId: product.id });
+            } catch {
+                setIsOutOfStock(true);
+                setCartPopup('error');
+            }
         });
+    }
+
+    async function updatePopupQuantity(quantity: number) {
+        if (!addedCart) return quantity;
+        const line = addedCart.lines.edges.find((edge) => edge.node.merchandise.id === selectedVariant?.id)?.node;
+        if (!line) throw new Error('Cart item not found.');
+        const updatedCart = await updateCartLine(line.id, quantity);
+        if (!updatedCart) throw new Error('Cart item could not be updated.');
+        setAddedCart(updatedCart);
+        return quantity;
     }
 
     return (
 
-        <Link href={`/products/${product.handle}`} className="group block flex-none w-[340px] bg-neutral-50 border border-neutral-100">
+        <div className="group relative block flex-none w-[340px] bg-neutral-50 border border-neutral-100">
+            {cartPopup && (
+                <CartAddPopup
+                    productTitle={product.title}
+                    imageUrl={displayImage?.url ?? null}
+                    status={cartPopup}
+                    quantity={addedCart?.lines.edges.find((edge) => edge.node.merchandise.id === selectedVariant?.id)?.node.quantity}
+                    checkoutUrl={addedCart?.checkoutUrl}
+                    onUpdateQuantity={cartPopup === 'success' ? updatePopupQuantity : undefined}
+                    onClose={() => {
+                        setCartPopup(null);
+                        setAddedCart(null);
+                    }}
+                />
+            )}
+
+            <Link href={`/products/${product.handle}`} className="block">
             
             <div className="relative aspect-square overflow-hidden bg-neutral-50">
                 <div className="absolute right-5 top-5 z-10">
@@ -70,6 +133,12 @@ export default function MinimalProductCard({ product }: MinimalProductCardProps)
                     />
                 )}
 
+                {(!isAvailable || isOutOfStock) && (
+                    <span className="absolute inset-x-5 top-5 z-10 bg-white/90 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-neutral-700">
+                        Out of stock
+                    </span>
+                )}
+
                 {images.length > 1 && (
                     <>
                         <button type="button" onClick={(event) => changeImage(event, -1)} aria-label="Previous image" className="absolute left-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 items-center justify-center bg-white text-neutral-950 group-hover:flex">
@@ -85,14 +154,20 @@ export default function MinimalProductCard({ product }: MinimalProductCardProps)
                     </>
                 )}
 
-                <button
-                    type="button"
-                    onClick={handleAddToCart}
-                    disabled={!defaultVariant || isPending}
-                    className="absolute bottom-5 left-5 right-5 hidden h-12 bg-neutral-950 text-base leading-[22.4px] font-semibold text-white cursor-pointer hover:bg-neutral-800 group-hover:block disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                    {isPending ? 'Adding...' : defaultVariant ? 'Add to cart' : 'Sold out'}
-                </button>
+                {isAvailable || hasVariants ? (
+                    <button
+                        type="button"
+                        onClick={handleAddToCart}
+                        disabled={!selectedVariant || isPending || !selectedVariant.availableForSale || selectedVariant.quantityAvailable <= 0 || isOutOfStock}
+                        className="absolute bottom-5 left-5 right-5 hidden h-12 bg-neutral-950 text-base leading-[22.4px] font-semibold text-white cursor-pointer hover:bg-neutral-800 group-hover:block disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                        {isPending ? 'Adding...' : isAvailable && !isOutOfStock ? 'Add to cart' : 'Out of stock'}
+                    </button>
+                ) : (
+                    <span className="absolute bottom-5 left-5 right-5 bg-neutral-700/90 px-4 py-3 text-center text-base font-semibold text-white">
+                        Out of stock
+                    </span>
+                )}
             </div>
 
             <div className="p-5">
@@ -109,14 +184,32 @@ export default function MinimalProductCard({ product }: MinimalProductCardProps)
                     {hasDiscount && <span className="rounded-full bg-error-base px-[3px] py-[1px] text-[10px] leading-[13px] font-medium text-white">-{discountPercent}%</span>}
                 </p>
 
+                {(!isAvailable || isOutOfStock) && <p className="mt-2 text-sm font-medium text-neutral-500">Out of stock</p>}
+
                 {colorValues.length > 0 && (
                     <div className="mt-2 flex gap-1.5">
                         {colorValues.map((optionValue) => (
-                            <span key={optionValue.id} title={optionValue.name} className="h-2.5 w-2.5 rounded-full border border-neutral-200" style={{ backgroundColor: getSwatchColor(optionValue.name, optionValue.swatch?.color) }} />
+                            <button
+                                type="button"
+                                key={optionValue.id}
+                                title={optionValue.name}
+                                aria-label={`View ${optionValue.name} color`}
+                                aria-pressed={selectedColor === optionValue.name}
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setSelectedColor(optionValue.name);
+                                    setActiveImageIndex(0);
+                                    setIsOutOfStock(false);
+                                }}
+                                className={`h-3 w-3 cursor-pointer rounded-full border-2 ${selectedColor === optionValue.name ? 'border-neutral-950' : 'border-neutral-200'}`}
+                                style={{ backgroundColor: getSwatchColor(optionValue.name, optionValue.swatch?.color) }}
+                            />
                         ))}
                     </div>
                 )}
             </div>
-        </Link>
+            </Link>
+        </div>
     );
 }

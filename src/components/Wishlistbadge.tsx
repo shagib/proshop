@@ -31,12 +31,18 @@ export default function WishlistBadge() {
   }
 
   function addProductToCart(product: Product) {
-    const variant = product.variants.edges.find((edge) => edge.node.availableForSale)?.node;
+    const variant = product.variants.edges.find(
+      (edge) => edge.node.availableForSale && edge.node.quantityAvailable > 0,
+    )?.node;
     if (!variant) return;
 
     startTransition(async () => {
-      await addItemToCart(variant.id, 1);
-      notifyCartUpdated({ openDrawer: true });
+      try {
+        await addItemToCart(variant.id, 1);
+        notifyCartUpdated({ openDrawer: true });
+      } catch {
+        // Inventory can change after the wishlist was loaded.
+      }
     });
   }
 

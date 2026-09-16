@@ -19,6 +19,7 @@ export type Cart = {
                 merchandise: {
                     id: string;
                     title: string;
+                    quantityAvailable: number;
                     image: Image | null;
                     product: {
                         title: string;
@@ -66,6 +67,7 @@ const cartFragment = `
                     ... on ProductVariant {
                         id
                         title
+                        quantityAvailable
                         image {
                             url
                             altText
@@ -87,7 +89,8 @@ const cartFragment = `
 
 type CartCreateResponse = {
     cartCreate: {
-        cart: Cart;
+        cart: Cart | null;
+        userErrors: { message: string }[];
     };
 };
 
@@ -96,6 +99,9 @@ const cartCreateMutation = `
         cartCreate(input: {lines: $lines}) {
             cart {
                 ${cartFragment}
+            }
+            userErrors {
+                message
             }
         }
     }
@@ -106,12 +112,17 @@ export async function createCart(variantId: string, quantity: number): Promise<C
         query: cartCreateMutation,
         variables: { lines: [{ merchandiseId: variantId, quantity}] },
     });
+    if (data.cartCreate.userErrors.length > 0) {
+        throw new Error(data.cartCreate.userErrors.map((error) => error.message).join(', '));
+    }
+    if (!data.cartCreate.cart) throw new Error('Shopify did not create a cart.');
     return data.cartCreate.cart;
 };
 
 type CartLinesAddResponse = {
     cartLinesAdd: {
-        cart: Cart;
+        cart: Cart | null;
+        userErrors: { message: string }[];
     };
 };
 
@@ -121,6 +132,9 @@ const cartLinesAddMutation = `
       cart {
         ${cartFragment}
       }
+            userErrors {
+                message
+            }
     }
   }
 `;
@@ -137,6 +151,10 @@ export async function addToCart(
             lines: [{ merchandiseId: variantId, quantity}]
         }
     });
+    if (data.cartLinesAdd.userErrors.length > 0) {
+        throw new Error(data.cartLinesAdd.userErrors.map((error) => error.message).join(', '));
+    }
+    if (!data.cartLinesAdd.cart) throw new Error('Shopify did not update the cart.');
     return data.cartLinesAdd.cart;
 }
 
@@ -162,7 +180,8 @@ export async function getCart(cartId: string): Promise<Cart | null> {
 
 type CartLinesUpdateResponse = {
         cartLinesUpdate: {
-                cart: Cart;
+        cart: Cart | null;
+        userErrors: { message: string }[];
         };
 };
 
@@ -171,6 +190,9 @@ const cartLinesUpdateMutation = `
         cartLinesUpdate(cartId: $cartId, lines: $lines) {
             cart {
                 ${cartFragment}
+            }
+            userErrors {
+                message
             }
         }
     }
@@ -185,12 +207,17 @@ export async function updateCartLine(
                 query: cartLinesUpdateMutation,
                 variables: { cartId, lines: [{ id: lineId, quantity }] },
         });
+        if (data.cartLinesUpdate.userErrors.length > 0) {
+            throw new Error(data.cartLinesUpdate.userErrors.map((error) => error.message).join(', '));
+        }
+        if (!data.cartLinesUpdate.cart) throw new Error('Shopify did not update the cart.');
         return data.cartLinesUpdate.cart;
 }
 
 type CartLinesRemoveResponse = {
         cartLinesRemove: {
-                cart: Cart;
+        cart: Cart | null;
+        userErrors: { message: string }[];
         };
 };
 
@@ -199,6 +226,9 @@ const cartLinesRemoveMutation = `
         cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
             cart {
                 ${cartFragment}
+            }
+            userErrors {
+                message
             }
         }
     }
@@ -212,5 +242,9 @@ export async function removeFromCart(
                 query: cartLinesRemoveMutation,
                 variables: { cartId, lineIds: [lineId] },
         });
+        if (data.cartLinesRemove.userErrors.length > 0) {
+            throw new Error(data.cartLinesRemove.userErrors.map((error) => error.message).join(', '));
+        }
+        if (!data.cartLinesRemove.cart) throw new Error('Shopify did not remove the cart line.');
         return data.cartLinesRemove.cart;
 }

@@ -63,6 +63,7 @@ export type SelectedOptions = Record<string, string>;
 type VariantLike = {
   id: string;
   availableForSale: boolean;
+  quantityAvailable: number;
   selectedOptions: { name: string; value: string }[];
 }
 
@@ -72,7 +73,6 @@ export function findMatchingVariant<T extends VariantLike>(
   selectedOptions: SelectedOptions
 ): T | undefined {
   return variants.find((variant) =>
-    variant.availableForSale &&
     variant.selectedOptions.length === Object.keys(selectedOptions).length &&
     variant.selectedOptions.every((opt) => selectedOptions[opt.name] === opt.value)
   );
@@ -84,7 +84,6 @@ export function findVariantForSelectedOptions<T extends VariantLike>(
   selectedOptions: SelectedOptions,
 ): T | undefined {
   return variants.find((variant) =>
-    variant.availableForSale &&
     Object.entries(selectedOptions).every(
       ([name, value]) => variant.selectedOptions.some((option) => option.name === name && option.value === value),
     )
@@ -94,7 +93,7 @@ export function findVariantForSelectedOptions<T extends VariantLike>(
 
 /** Sensible starting variant: first in-stock one, falling back to the first variant overall. */
 export function getDefaultVariant<T extends VariantLike>(variants: T[]): T | undefined {
-  return variants.find((v) => v.availableForSale) ?? variants[0];
+  return variants.find((v) => v.availableForSale && v.quantityAvailable > 0) ?? variants[0];
 }
 
 /** Build a selectedOptions map (Color -> "Red", Size -> "M") from a variant. */
@@ -110,7 +109,6 @@ export function getAvailableValuesForOption(
 ): Set<string> {
   const set = new Set<string>();
   for (const variant of variants) {
-    if (!variant.availableForSale) continue;
     const matchesOtherOptions = Object.entries(selectedOptions).every(
       ([name, value]) => name === optionName || variant.selectedOptions.some(
         (option) => option.name === name && option.value === value,

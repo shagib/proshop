@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { addItemToCart } from "@/actions/cart";
+import { addItemToCart, createBuyNowCart } from "@/actions/cart";
 import { useProductVariant } from "./ProductVariantcontext";
 import { notifyCartUpdated } from "@/lib/cart-events";
+import { MAX_LINE_QUANTITY } from "@/lib/cart-constants";
 
 // type addToCartFormProps = {
 //   available: boolean;
@@ -13,29 +13,44 @@ import { notifyCartUpdated } from "@/lib/cart-events";
 
 export default function AddToCartForm() {
   const { selectedVariant } = useProductVariant();
-  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [unavailableVariantId, setUnavailableVariantId] = useState<string | null>(null);
 
-  const available = selectedVariant?.availableForSale ?? false;
+  const stockQuantity = selectedVariant?.quantityAvailable ?? 0;
+  const available = Boolean(
+    selectedVariant?.availableForSale &&
+    stockQuantity > 0 &&
+    unavailableVariantId !== selectedVariant?.id,
+  );
+  const selectedQuantity = Math.min(quantity, MAX_LINE_QUANTITY, Math.max(1, stockQuantity));
 
   function decrease() {
-    setQuantity((q) => Math.max(1, q - 1));
+    setQuantity(Math.max(1, selectedQuantity - 1));
   }
 
   function increase() {
-    setQuantity((q) => Math.min(10, q + 1));
+    if (selectedQuantity >= stockQuantity) {
+      setMessage('This product is out of stock or the requested quantity is unavailable.');
+      return;
+    }
+    setQuantity(Math.min(MAX_LINE_QUANTITY, selectedQuantity + 1));
   }
 
   function handleAddToCart() {
-    if (!selectedVariant) return;
+    if (!selectedVariant || !available) return;
 
     startTransition(async () => {
-      await addItemToCart(selectedVariant.id, quantity);
-      setMessage('Added to cart!');
-      notifyCartUpdated({ openDrawer: true });
-      setTimeout(() => setMessage(null), 2000);
+      try {
+        await addItemToCart(selectedVariant.id, selectedQuantity);
+        setMessage('Added to cart!');
+        notifyCartUpdated({ openDrawer: true });
+        setTimeout(() => setMessage(null), 2000);
+      } catch {
+        setUnavailableVariantId(selectedVariant.id);
+        setMessage('This product is out of stock or the requested quantity is unavailable.');
+      }
     });
   }
 
@@ -43,8 +58,13 @@ export default function AddToCartForm() {
     if (!selectedVariant || !available) return;
 
     startTransition(async () => {
-      await addItemToCart(selectedVariant.id, quantity);
-      router.push('/cart');
+      try {
+        const cart = await createBuyNowCart(selectedVariant.id, selectedQuantity);
+        window.location.assign(cart.checkoutUrl);
+      } catch {
+        setUnavailableVariantId(selectedVariant.id);
+        setMessage('This product is out of stock or the requested quantity is unavailable.');
+      }
     });
   }
 
@@ -54,7 +74,7 @@ export default function AddToCartForm() {
     ? 'SELECT OPTIONS'
     : available
     ? 'ADD TO CART'
-    : 'SOLD OUT';
+    : 'OUT OF STOCK';
  
 
   return (
@@ -65,6 +85,7 @@ export default function AddToCartForm() {
           className="product-quantity-btn product-quantity-btn--minus"
           aria-label="Decrease quantity"
           onClick={decrease}
+          disabled={!available || quantity <= 1}
         >
           -
         </button>
@@ -72,7 +93,7 @@ export default function AddToCartForm() {
           className="product-quantity-input w-[36px]"
           type="number"
           id="number"
-          value={quantity}
+          value={selectedQuantity}
           min={1}
           minLength={1}
           maxLength={2}
@@ -83,6 +104,7 @@ export default function AddToCartForm() {
           className="product-quantity-btn product-quantity-btn--plus"
           aria-label="Increase quantity"
           onClick={increase}
+          disabled={!available}
         >
           +
         </button>

@@ -1,22 +1,57 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import type { Cart } from '@/lib/shopify/cart';
-import { updateCartLine, removeItemFromCart } from '@/actions/cart';
+import { getCurrentCart, updateCartLine, removeItemFromCart } from '@/actions/cart';
 import { notifyCartUpdated } from '@/lib/cart-events';
+import { MAX_LINE_QUANTITY } from '@/lib/cart-constants';
 
 export default function CartPageLines({ initialCart }: { initialCart: Cart }) {
   const [cart, setCart] = useState(initialCart);
   const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+  const requestVersions = useRef<Record<string, number>>({});
 
   const lines = cart.lines.edges.map((edge) => edge.node);
 
   function changeQuantity(lineId: string, quantity: number) {
+    const currentLine = cart.lines.edges.find((edge) => edge.node.id === lineId)?.node;
+    if (!currentLine) return;
+
+    if (quantity > currentLine.merchandise.quantityAvailable || quantity > MAX_LINE_QUANTITY) {
+      setMessage('This product is out of stock or the requested quantity is unavailable.');
+      return;
+    }
+    const nextQuantity = Math.max(1, quantity);
+    if (nextQuantity === currentLine.quantity) return;
+
+    const version = (requestVersions.current[lineId] ?? 0) + 1;
+    requestVersions.current[lineId] = version;
+    const quantityDelta = nextQuantity - currentLine.quantity;
+    setCart((current) => ({
+      ...current,
+      totalQuantity: current.totalQuantity + quantityDelta,
+      lines: {
+        ...current.lines,
+        edges: current.lines.edges.map((edge) =>
+          edge.node.id === lineId
+            ? { ...edge, node: { ...edge.node, quantity: nextQuantity } }
+            : edge,
+        ),
+      },
+    }));
+
     startTransition(async () => {
-      const updated = await updateCartLine(lineId, quantity);
-      if (updated) {
-        setCart(updated);
-        notifyCartUpdated();
+      try {
+        const updated = await updateCartLine(lineId, nextQuantity);
+        if (updated && requestVersions.current[lineId] === version) {
+          setCart(updated);
+          notifyCartUpdated();
+        }
+      } catch {
+        const latest = await getCurrentCart();
+        if (latest) setCart(latest);
+        setMessage('This product is out of stock or the requested quantity is unavailable.');
       }
     });
   }
@@ -37,6 +72,7 @@ export default function CartPageLines({ initialCart }: { initialCart: Cart }) {
 
   return (
     <div className="flex flex-col gap-10 max-[900px]:flex-col md:flex-row">
+      {message && <p className="text-sm font-medium text-red-600" role="status">{message}</p>}
       <ul className="flex-1 flex flex-col gap-6">
         {lines.map((line) => {
           const image = line.merchandise.image ?? line.merchandise.product.featuredImage;
@@ -53,11 +89,11 @@ export default function CartPageLines({ initialCart }: { initialCart: Cart }) {
                 {!isDefaultVariant && <p className="text-sm text-neutral-500">{line.merchandise.title}</p>}
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center border border-neutral-200 rounded">
-                    <button type="button" className="px-3 py-1" aria-label="Decrease quantity" onClick={() => changeQuantity(line.id, line.quantity - 1)} disabled={isPending}>
+                    <button type="button" className="px-3 py-1 disabled:opacity-40" aria-label="Decrease quantity" onClick={() => changeQuantity(line.id, line.quantity - 1)} disabled={line.quantity <= 1}>
                       -
                     </button>
                     <span className="px-3">{line.quantity}</span>
-                    <button type="button" className="px-3 py-1" aria-label="Increase quantity" onClick={() => changeQuantity(line.id, line.quantity + 1)} disabled={isPending}>
+                    <button type="button" className="px-3 py-1 disabled:opacity-40" aria-label="Increase quantity" onClick={() => changeQuantity(line.id, line.quantity + 1)} disabled={line.quantity >= 100}>
                       +
                     </button>
                   </div>

@@ -16,7 +16,7 @@ export default function ProductOptions() {
       {product.options.map((option) => {
         const isEyewearFrameColor = option.name.trim().toLowerCase() === 'eyewear frame color';
         const isColor = option.name.trim().toLowerCase() === 'color';
-        const availableValues = getAvailableValuesForOption(
+        const selectableValues = getAvailableValuesForOption(
           variants,
           option.name,
           selectedOptions,
@@ -46,10 +46,10 @@ export default function ProductOptions() {
                   <option
                     key={optionValue.name}
                     value={optionValue.name}
-                    disabled={!availableValues.has(optionValue.name)}
+                    disabled={!selectableValues.has(optionValue.name)}
                   >
                     {optionValue.name}
-                    {!availableValues.has(optionValue.name) ? ' (Unavailable)' : ''}
+                    {!selectableValues.has(optionValue.name) ? ' (Unavailable)' : ''}
                   </option>
                 ))}
               </select>
@@ -58,7 +58,7 @@ export default function ProductOptions() {
                 {optionValues.map((optionValue) => {
                   const value = optionValue.name;
                   const isSelected = selectedOptions[option.name] === value;
-                  const isAvailable = availableValues.has(value);
+                  const isSelectable = selectableValues.has(value);
 
                   return isColor ? (
                     <button
@@ -67,11 +67,11 @@ export default function ProductOptions() {
                       title={value}
                       aria-pressed={isSelected}
                       aria-label={value}
-                      disabled={!isAvailable}
+                      disabled={!isSelectable}
                       onClick={() => setOption(option.name, value)}
                       className={`relative h-8 w-8 rounded-full border-2 transition ${
                         isSelected ? 'border-neutral-950' : 'border-neutral-200'
-                      } ${!isAvailable ? 'cursor-not-allowed opacity-30' : 'cursor-pointer hover:border-neutral-500'}`}
+                        } ${!isSelectable ? 'cursor-not-allowed opacity-30' : 'cursor-pointer hover:border-neutral-500'}`}
                       style={{ backgroundColor: getSwatchColor(value, optionValue.swatch?.color) }}
                     />
                   ) : (
@@ -79,13 +79,13 @@ export default function ProductOptions() {
                       key={value}
                       type="button"
                       aria-pressed={isSelected}
-                      disabled={!isAvailable}
+                      disabled={!isSelectable}
                       onClick={() => setOption(option.name, value)}
                       className={`rounded border px-4 py-2 text-sm font-medium transition ${
                         isSelected
                           ? 'border-neutral-950 bg-neutral-950 text-white'
                           : 'border-neutral-200 text-neutral-900'
-                      } ${!isAvailable ? 'cursor-not-allowed opacity-60 line-through' : 'cursor-pointer hover:border-neutral-950'}`}
+                        } ${!isSelectable ? 'cursor-not-allowed opacity-60 line-through' : 'cursor-pointer hover:border-neutral-950'}`}
                     >
                       {value}
                     </button>

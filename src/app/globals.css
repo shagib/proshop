@@ -34,3 +34,23 @@ body {
   font-family: 'Instrument Sans', sans-serif;
   background-color: var(--color-neutral);
 }
+
+@keyframes cart-drawer-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes cart-popup-up {
+  from { opacity: 0; transform: translateY(1rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+  body {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  }
+
+  .cart-drawer {
+    animation: cart-drawer-up 220ms ease-out;
+  }
+}

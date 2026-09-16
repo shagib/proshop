@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { addItemToCart } from '@/actions/cart';
-import { notifyCartUpdated } from '@/lib/cart-events';
+import { addItemToCart, updateCartLine } from '@/actions/cart';
+import { CART_UPDATED_EVENT, notifyCartUpdated, type CartUpdatedDetail } from '@/lib/cart-events';
 import { Product } from '@/lib/shopify/products';
-import { getOptionValues, getProductBadgeInfo } from '@/lib/product-helpers';
+import type { Cart } from '@/lib/shopify/cart';
+import { getOptionValues, getProductBadgeInfo, getDefaultVariant, hasRealVariants } from '@/lib/product-helpers';
 import { getSwatchColor } from '@/lib/colors';
 import WishlistButton from '@/components/wishlistButton';
+import CartAddPopup from '@/components/CartAddPopup';
 
 type ProductCardProps = {
   product: Product;
@@ -18,6 +20,24 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [unavailableVariantId, setUnavailableVariantId] = useState<string | null>(null);
+  const [cartPopup, setCartPopup] = useState<'success' | 'error' | null>(null);
+  const [addedCart, setAddedCart] = useState<Cart | null>(null);
+  const [addedVariantId, setAddedVariantId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function closePreviousPopup(event: Event) {
+      const detail = (event as CustomEvent<CartUpdatedDetail>).detail;
+      if (detail?.popupProductId && detail.popupProductId !== product.id) {
+        setCartPopup(null);
+        setAddedCart(null);
+        setAddedVariantId(null);
+      }
+    }
+
+    window.addEventListener(CART_UPDATED_EVENT, closePreviousPopup);
+    return () => window.removeEventListener(CART_UPDATED_EVENT, closePreviousPopup);
+  }, [product.id]);
 
   const images = product.images.edges.map((edge) => edge.node);
   const hasMultipleImages = images.length > 1;
@@ -27,21 +47,29 @@ export default function ProductCard({ product }: ProductCardProps) {
   const colorOption = product.options.find((option) => option.name.toLowerCase() === 'color');
   const colorValues = (colorOption ? getOptionValues(colorOption) : []).filter((optionValue) =>
     product.variants.edges.some((edge) =>
-      edge.node.availableForSale && edge.node.selectedOptions.some(
+      edge.node.selectedOptions.some(
         (option) => option.name.toLowerCase() === 'color' && option.value === optionValue.name,
       ),
     ),
   );
-  const defaultVariant = product.variants.edges.find((edge) => edge.node.availableForSale)?.node;
+  const defaultVariant = getDefaultVariant(product.variants.edges.map((edge) => edge.node));
+  const hasVariants = hasRealVariants(product);
   const selectedVariant = selectedColor
     ? product.variants.edges.find((edge) =>
-        edge.node.availableForSale && edge.node.selectedOptions.some(
+        edge.node.selectedOptions.some(
           (option) => option.name.toLowerCase() === 'color' && option.value === selectedColor,
         ),
       )?.node ?? defaultVariant
     : defaultVariant;
+  const isAvailable = Boolean(
+    selectedVariant?.availableForSale &&
+    selectedVariant.quantityAvailable > 0 &&
+    unavailableVariantId !== selectedVariant?.id,
+  );
 
-  const displayImage = selectedVariant?.image ?? images[activeImageIndex] ?? product.featuredImage;
+  const displayImage = selectedColor
+    ? selectedVariant?.image ?? images[activeImageIndex] ?? product.featuredImage
+    : images[activeImageIndex] ?? selectedVariant?.image ?? product.featuredImage;
   const currencyCode = product.priceRange.minVariantPrice.currencyCode;
   const formatPrice = (amount: string) => new Intl.NumberFormat(undefined, {
     style: 'currency',
@@ -50,11 +78,13 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   function showPrevImage(event: React.MouseEvent) {
     event.preventDefault();
+    event.stopPropagation();
     setActiveImageIndex((i) => (i === 0 ? images.length - 1 : i - 1));
   }
 
   function showNextImage(event: React.MouseEvent) {
     event.preventDefault();
+    event.stopPropagation();
     setActiveImageIndex((i) => (i === images.length - 1 ? 0 : i + 1));
   }
 
@@ -64,13 +94,49 @@ export default function ProductCard({ product }: ProductCardProps) {
     if (!selectedVariant) return;
 
     startTransition(async () => {
-      await addItemToCart(selectedVariant.id, 1);
-      notifyCartUpdated({ openDrawer: true });
+      try {
+        const updatedCart = await addItemToCart(selectedVariant.id, 1);
+        setAddedCart(updatedCart);
+        setAddedVariantId(selectedVariant.id);
+        setCartPopup('success');
+        notifyCartUpdated({ popupProductId: product.id });
+      } catch {
+        setUnavailableVariantId(selectedVariant.id);
+        setCartPopup('error');
+      }
     });
   }
 
+  async function updatePopupQuantity(quantity: number) {
+    if (!addedCart || !addedVariantId) return quantity;
+    const line = addedCart.lines.edges.find((edge) => edge.node.merchandise.id === addedVariantId)?.node;
+    if (!line) throw new Error('Cart item not found.');
+    const updatedCart = await updateCartLine(line.id, quantity);
+    if (!updatedCart) throw new Error('Cart item could not be updated.');
+    setAddedCart(updatedCart);
+    return quantity;
+  }
+
   return (
-    <Link href={`/products/${product.handle}`} className="product-card group relative block">
+    <div className="product-card group relative block">
+      {cartPopup && (
+        <CartAddPopup
+          productTitle={product.title}
+          imageUrl={displayImage?.url ?? null}
+          status={cartPopup}
+          quantity={addedCart?.lines.edges.find((edge) => edge.node.merchandise.id === addedVariantId)?.node.quantity}
+          checkoutUrl={addedCart?.checkoutUrl}
+          onUpdateQuantity={cartPopup === 'success' ? updatePopupQuantity : undefined}
+          onClose={() => {
+            setCartPopup(null);
+            setAddedCart(null);
+            setAddedVariantId(null);
+          }}
+        />
+      )}
+
+      <Link href={`/products/${product.handle}`} className="block">
+
       {/* ===== Wishlist ===== */}
       <div className="absolute top-3 left-3 z-10">
         <WishlistButton
@@ -100,6 +166,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
         )}
 
+        {!isAvailable && (
+          <span className="absolute inset-x-3 top-3 z-10 bg-white/90 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-neutral-700">
+            Out of stock
+          </span>
+        )}
+
         {hasMultipleImages && (
           <>
             <button
@@ -122,14 +194,20 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
 
         {/* ===== Add to Cart - Hover এ দেখা যায় ===== */}
-        <button
-          type="button"
+        {isAvailable || hasVariants ? (
+          <button
+            type="button"
             onClick={handleAddToCart}
-            disabled={!selectedVariant || isPending}
-          className="hidden group-hover:block absolute bottom-3 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-sm px-4 py-2 rounded whitespace-nowrap"
-        >
-          {isPending ? 'Adding...' : selectedVariant ? 'Add to cart' : 'Sold out'}
-        </button>
+            disabled={!selectedVariant || isPending || !isAvailable}
+            className="hidden group-hover:block absolute bottom-3 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-sm px-4 py-2 rounded whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isPending ? 'Adding...' : isAvailable ? 'Add to cart' : 'Out of stock'}
+          </button>
+        ) : (
+          <span className="absolute bottom-3 left-3 right-3 bg-neutral-700/90 px-4 py-2 text-center text-sm font-semibold text-white">
+            Out of stock
+          </span>
+        )}
       </div>
 
       {/* ===== Info ===== */}
@@ -166,6 +244,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
 
+        {!isAvailable && <p className="mt-2 text-sm font-medium text-neutral-500">Out of stock</p>}
+
         {/* ===== Color Swatches ===== */}
         {colorValues.length > 0 && (
           <div className="flex gap-2 mt-2">
@@ -189,6 +269,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
       </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

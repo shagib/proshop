@@ -15,7 +15,7 @@ export default async function AdminMessagesPage() {
   const messages = await getAllContactMessages();
 
   return (
-    <main className="mx-auto w-full max-w-[1400px] p-8">
+    <main className="mx-auto w-full max-w-[1200px] p-8">
       <AdminSessionTimeout />
       <AdminNav active="messages" />
       <h1 className="mb-2 text-2xl font-semibold">Contact Messages</h1>
