@@ -5,6 +5,7 @@ import type { Cart } from '@/lib/shopify/cart';
 import { getCurrentCart, updateCartLine, removeItemFromCart } from '@/actions/cart';
 import { notifyCartUpdated } from '@/lib/cart-events';
 import { MAX_LINE_QUANTITY } from '@/lib/cart-constants';
+import { applyLineQuantityChange, canIncreaseCartLine, getCartLineMaxQuantity } from '@/lib/cart-stock';
 
 export default function CartPageLines({ initialCart }: { initialCart: Cart }) {
   const [cart, setCart] = useState(initialCart);
@@ -18,11 +19,20 @@ export default function CartPageLines({ initialCart }: { initialCart: Cart }) {
     const currentLine = cart.lines.edges.find((edge) => edge.node.id === lineId)?.node;
     if (!currentLine) return;
 
-    if (quantity > currentLine.merchandise.quantityAvailable || quantity > MAX_LINE_QUANTITY) {
+    const nextQuantity = Math.max(1, quantity);
+    const increase = nextQuantity - currentLine.quantity;
+
+    // merchandise.quantityAvailable ta "already ei line e ja ache tar baire aro koto
+    // add kora jay" seta bole - tai amra shudhu BADHANO (increase) ta compare korbo,
+    // notun total quantity na. Quantity kombe emon change e (increase <= 0) check dorkar nai.
+    if (nextQuantity > MAX_LINE_QUANTITY) {
+      setMessage(`You can order a maximum of ${MAX_LINE_QUANTITY} items.`);
+      return;
+    }
+    if (increase > 0 && !canIncreaseCartLine(currentLine, increase)) {
       setMessage('This product is out of stock or the requested quantity is unavailable.');
       return;
     }
-    const nextQuantity = Math.max(1, quantity);
     if (nextQuantity === currentLine.quantity) return;
 
     const version = (requestVersions.current[lineId] ?? 0) + 1;
@@ -35,24 +45,25 @@ export default function CartPageLines({ initialCart }: { initialCart: Cart }) {
         ...current.lines,
         edges: current.lines.edges.map((edge) =>
           edge.node.id === lineId
-            ? { ...edge, node: { ...edge.node, quantity: nextQuantity } }
+            ? { ...edge, node: applyLineQuantityChange(edge.node, nextQuantity) }
             : edge,
         ),
       },
     }));
 
     startTransition(async () => {
-      try {
-        const updated = await updateCartLine(lineId, nextQuantity);
-        if (updated && requestVersions.current[lineId] === version) {
-          setCart(updated);
-          notifyCartUpdated();
-        }
-      } catch {
-        const latest = await getCurrentCart();
-        if (latest) setCart(latest);
-        setMessage('This product is out of stock or the requested quantity is unavailable.');
+      const result = await updateCartLine(lineId, nextQuantity);
+      if (requestVersions.current[lineId] !== version) return;
+
+      if (!result.success) {
+        setCart(result.cart ?? (await getCurrentCart()) ?? cart);
+        setMessage(result.message);
+        return;
       }
+
+      setCart(result.cart);
+      setMessage(null);
+      notifyCartUpdated();
     });
   }
 
@@ -93,7 +104,7 @@ export default function CartPageLines({ initialCart }: { initialCart: Cart }) {
                       -
                     </button>
                     <span className="px-3">{line.quantity}</span>
-                    <button type="button" className="px-3 py-1 disabled:opacity-40" aria-label="Increase quantity" onClick={() => changeQuantity(line.id, line.quantity + 1)} disabled={line.quantity >= 100}>
+                    <button type="button" className="px-3 py-1 disabled:opacity-40" aria-label="Increase quantity" onClick={() => changeQuantity(line.id, line.quantity + 1)} disabled={line.quantity >= getCartLineMaxQuantity(line)}>
                       +
                     </button>
                   </div>

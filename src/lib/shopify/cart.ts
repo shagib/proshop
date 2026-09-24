@@ -19,7 +19,7 @@ export type Cart = {
                 merchandise: {
                     id: string;
                     title: string;
-                    quantityAvailable: number;
+                    quantityAvailable: number | null;
                     image: Image | null;
                     product: {
                         title: string;

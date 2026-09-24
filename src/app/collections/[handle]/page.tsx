@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getCollection } from '@/lib/shopify/collections';
+import { getCurrentCart } from '@/actions/cart';
 import ProductCard from '@/components/ProductCard';
 
 type CollectionPageProps = {
@@ -8,7 +9,10 @@ type CollectionPageProps = {
 
 export default async function CollectionPage({ params }: CollectionPageProps) {
   const { handle } = await params;
-  const collection = await getCollection(handle);
+  const [collection, cart] = await Promise.all([
+    getCollection(handle),
+    getCurrentCart(),
+  ]);
 
   if (!collection) {
     notFound();
@@ -41,7 +45,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
       ) : (
         <div className="grid grid-cols-5 gap-6 max-[1024px]:grid-cols-2 max-[640px]:grid-cols-1">
             {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} cart={cart} />
             ))}
         </div>
       )}

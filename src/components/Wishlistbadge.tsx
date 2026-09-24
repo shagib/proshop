@@ -32,14 +32,18 @@ export default function WishlistBadge() {
 
   function addProductToCart(product: Product) {
     const variant = product.variants.edges.find(
-      (edge) => edge.node.availableForSale && edge.node.quantityAvailable > 0,
+      (edge) =>
+        edge.node.availableForSale &&
+        (edge.node.quantityAvailable === null || edge.node.quantityAvailable > 0),
     )?.node;
     if (!variant) return;
 
     startTransition(async () => {
       try {
-        await addItemToCart(variant.id, 1);
-        notifyCartUpdated({ openDrawer: true });
+        const res = await addItemToCart(variant.id, 1);
+        if (res.success) {
+          notifyCartUpdated({ openDrawer: true });
+        }
       } catch {
         // Inventory can change after the wishlist was loaded.
       }

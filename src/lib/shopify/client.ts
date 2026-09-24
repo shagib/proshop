@@ -16,7 +16,8 @@ export async function shopifyFetch<T>({
             'content-type': 'application/json',
             'x-shopify-storefront-access-token': token as string,
         },
-        body: JSON.stringify({ query, variables })
+        body: JSON.stringify({ query, variables }),
+        cache: 'no-store',
     });
 
     if (!response.ok) {

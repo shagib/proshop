@@ -63,8 +63,14 @@ export type SelectedOptions = Record<string, string>;
 type VariantLike = {
   id: string;
   availableForSale: boolean;
-  quantityAvailable: number;
+  quantityAvailable: number | null;
   selectedOptions: { name: string; value: string }[];
+}
+
+export function isVariantInStock(variant: VariantLike): boolean {
+  if (!variant.availableForSale) return false;
+  if (variant.quantityAvailable === null) return true;
+  return variant.quantityAvailable > 0;
 }
 
 /** Find the variant that matches every selected option value (works for 1..N options: color, size, material, etc). */
@@ -90,10 +96,9 @@ export function findVariantForSelectedOptions<T extends VariantLike>(
   );
 }
 
-
 /** Sensible starting variant: first in-stock one, falling back to the first variant overall. */
 export function getDefaultVariant<T extends VariantLike>(variants: T[]): T | undefined {
-  return variants.find((v) => v.availableForSale && v.quantityAvailable > 0) ?? variants[0];
+  return variants.find(isVariantInStock) ?? variants[0];
 }
 
 /** Build a selectedOptions map (Color -> "Red", Size -> "M") from a variant. */

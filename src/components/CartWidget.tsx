@@ -6,6 +6,7 @@ import type { Cart } from '@/lib/shopify/cart';
 import { getCurrentCart, updateCartLine, removeItemFromCart } from '@/actions/cart';
 import { CART_UPDATED_EVENT, OPEN_CART_EVENT, type CartUpdatedDetail } from '@/lib/cart-events';
 import { MAX_LINE_QUANTITY } from '@/lib/cart-constants';
+import { applyLineQuantityChange, canIncreaseCartLine, getCartLineMaxQuantity } from '@/lib/cart-stock';
 
 export default function CartWidget() {
   const [cart, setCart] = useState<Cart | null>(null);
@@ -62,11 +63,17 @@ export default function CartWidget() {
     const currentLine = cart?.lines.edges.find((edge) => edge.node.id === lineId)?.node;
     if (!currentLine) return;
 
-    if (quantity > currentLine.merchandise.quantityAvailable || quantity > MAX_LINE_QUANTITY) {
+    const nextQuantity = Math.max(1, quantity);
+    const increase = nextQuantity - currentLine.quantity;
+
+    if (nextQuantity > MAX_LINE_QUANTITY) {
+      setMessage(`You can order a maximum of ${MAX_LINE_QUANTITY} items.`);
+      return;
+    }
+    if (increase > 0 && !canIncreaseCartLine(currentLine, increase)) {
       setMessage('This product is out of stock or the requested quantity is unavailable.');
       return;
     }
-    const nextQuantity = Math.max(1, quantity);
     if (nextQuantity === currentLine.quantity) return;
 
     const version = (requestVersions.current[lineId] ?? 0) + 1;
@@ -79,23 +86,24 @@ export default function CartWidget() {
         ...current.lines,
         edges: current.lines.edges.map((edge) =>
           edge.node.id === lineId
-            ? { ...edge, node: { ...edge.node, quantity: nextQuantity } }
+            ? { ...edge, node: applyLineQuantityChange(edge.node, nextQuantity) }
             : edge,
         ),
       },
     }));
 
     startTransition(async () => {
-      try {
-        const updated = await updateCartLine(lineId, nextQuantity);
-        if (updated && requestVersions.current[lineId] === version) {
-          setCart(updated);
-        }
-      } catch {
-        const latest = await getCurrentCart();
-        setCart(latest);
-        setMessage('This product is out of stock or the requested quantity is unavailable.');
+      const result = await updateCartLine(lineId, nextQuantity);
+      if (requestVersions.current[lineId] !== version) return;
+
+      if (!result.success) {
+        setCart(result.cart ?? (await getCurrentCart()));
+        setMessage(result.message);
+        return;
       }
+
+      setCart(result.cart);
+      setMessage(null);
     });
   }
 
@@ -286,7 +294,7 @@ export default function CartWidget() {
                                   className="h-full w-7 rounded-full disabled:opacity-40"
                                   aria-label="Increase quantity"
                                   onClick={() => changeQuantity(line.id, line.quantity + 1)}
-                                  disabled={line.quantity >= MAX_LINE_QUANTITY}
+                                  disabled={line.quantity >= getCartLineMaxQuantity(line)}
                                 >
                                   +
                                 </button>

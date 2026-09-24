@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getProducts } from '@/lib/shopify/products';
 import ProductCard from '@/components/ProductCard';
+import { getCurrentCart } from '@/actions/cart';
 
 type ShopPageProps = {
   searchParams: Promise<{ sort?: string }>;
@@ -36,7 +37,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const { sort } = await searchParams;
   const { sortKey, reverse } = resolveSortOption(sort);
 
-  const products = await getProducts({ first: 24, sortKey, reverse });
+  const [products, cart] = await Promise.all([
+    getProducts({ first: 24, sortKey, reverse }),
+    getCurrentCart(),
+  ]);
 
   return (
     <main className="px-8 py-16 max-w-[1856px] w-full mx-auto max-[1024px]:px-4">
@@ -65,7 +69,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       ) : (
         <div className="grid grid-cols-5 gap-6 max-[1024px]:grid-cols-2 max-[640px]:grid-cols-1">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} cart={cart} />
           ))}
         </div>
       )}
